@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Jam WIB Akurat</title>
+    <meta name="description" content="Jam Indonesia (WIB) akurat format jam:menit:detik:milidetik, hanya dari API server." />
+    <link rel="stylesheet" href="./style.css" />
+  </head>
+  <body>
+    <main class="wrap">
+      <div class="header">
+        <h1 class="sr-only">Jam WIB Akurat</h1>
+        <div class="pill" id="status" aria-live="polite">Menyinkronkan…</div>
+      </div>
+
+      <div class="clock" id="clock" aria-label="Jam sekarang">00:00:00:000</div>
+
+      <div class="meta">
+        <span id="tzLabel">Waktu Indonesia Barat (WIB)</span>
+      </div>
+
+      <div class="error" id="error" hidden></div>
+
+      <noscript>Aktifkan JavaScript untuk menampilkan jam.</noscript>
+    </main>
+
+    <script defer src="./main.js"></script>
+  </body>
+</html>
