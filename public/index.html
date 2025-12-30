@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kasir Struk Toko</title>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
+<style>
+body {
+  font-family: monospace;
+  background: #eee;
+  padding: 10px;
+}
+
+.box {
+  background: #fff;
+  max-width: 420px;
+  margin: auto;
+  padding: 10px;
+  border-radius: 6px;
+}
+
+input, select, button {
+  width: 100%;
+  padding: 8px;
+  margin: 4px 0;
+  font-size: 14px;
+}
+
+.barang {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr auto;
+  gap: 4px;
+}
+
+.barang button {
+  width: 32px;
+}
+
+.struk {
+  margin-top: 10px;
+  border-top: 1px dashed #000;
+  padding-top: 8px;
+  font-size: 12px;
+}
+
+@media print {
+  body { background: white; }
+  .box button, select, input { display: none; }
+  .box { box-shadow: none; }
+}
+</style>
+</head>
+
+<body>
+
+<div class="box">
+<h3>Kasir Struk Toko</h3>
+
+<input id="toko" placeholder="Nama Toko">
+<input id="alamat" placeholder="Alamat">
+<input id="hp" placeholder="No HP">
+
+<select id="kertas">
+  <option value="58">Thermal 58mm</option>
+  <option value="80">Thermal 80mm</option>
+</select>
+
+<h4>Barang</h4>
+<div id="barang-list"></div>
+<button onclick="tambahBarang()">➕ Tambah Barang</button>
+
+<input id="uang" type="number" placeholder="Uang Pembeli">
+
+<button onclick="hitung()">Hitung</button>
+
+<div id="struk" class="struk">
+<pre id="hasil"></pre>
+</div>
+
+<button onclick="window.print()">🖨️ Cetak</button>
+<button onclick="downloadPDF()">📄 Download PDF</button>
+</div>
+
+<script>
+const MAX_BARANG = 30;
+const list = document.getElementById("barang-list");
+
+function rupiah(n) {
+  return "Rp " + n.toLocaleString("id-ID");
+}
+
+function tambahBarang() {
+  if (list.children.length >= MAX_BARANG) {
+    alert("Maksimal 30 barang");
+    return;
+  }
+
+  const div = document.createElement("div");
+  div.className = "barang";
+  div.innerHTML = `
+    <input placeholder="Nama">
+    <input type="number" placeholder="Qty" value="1">
+    <input type="number" placeholder="Harga">
+    <button onclick="hapusBarang(this)">✖</button>
+  `;
+  list.appendChild(div);
+}
+
+function hapusBarang(btn) {
+  btn.parentElement.remove();
+}
+
+// default 1 barang
+tambahBarang();
+
+function hitung() {
+  let total = 0;
+  let detail = "";
+
+  document.querySelectorAll(".barang").forEach(row => {
+    const nama = row.children[0].value;
+    const qty = Number(row.children[1].value || 0);
+    const harga = Number(row.children[2].value || 0);
+    const sub = qty * harga;
+
+    if (nama && qty > 0) {
+      detail += `${nama}\n${qty} x ${rupiah(harga)} = ${rupiah(sub)}\n`;
+      total += sub;
+    }
+  });
+
+  const uang = Number(document.getElementById("uang").value || 0);
+  const kembali = uang - total;
+
+  const lebar = document.getElementById("kertas").value;
+  document.getElementById("struk").style.width =
+    lebar === "58" ? "220px" : "300px";
+
+  document.getElementById("hasil").textContent = `
+${document.getElementById("toko").value}
+${document.getElementById("alamat").value}
+HP: ${document.getElementById("hp").value}
+------------------------
+${detail}
+------------------------
+TOTAL   : ${rupiah(total)}
+BAYAR   : ${rupiah(uang)}
+KEMBALI : ${rupiah(kembali)}
+------------------------
+Terima Kasih
+`;
+}
+
+function downloadPDF() {
+  html2pdf()
+    .set({ margin: 0, scale: 2 })
+    .from(document.getElementById("struk"))
+    .save("struk.pdf");
+}
+</script>
+
+</body>
+</html>
