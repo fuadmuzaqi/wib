@@ -2,7 +2,7 @@
 <html lang="id">
 <head>
 <meta charset="UTF-8">
-<title>Image Upscaler – WebGPU Lanczos3</title>
+<title>Image Upscaler WebGPU Lanczos3</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <style>
@@ -10,7 +10,7 @@ body {
   background:#020617;
   color:#e5e7eb;
   font-family:system-ui;
-  max-width:800px;
+  max-width:900px;
   margin:auto;
   padding:20px;
 }
@@ -38,6 +38,8 @@ img {
   margin-top:20px;
   border-radius:10px;
 }
+small { opacity:.7 }
+
 #progressBox {
   display:none;
   margin-top:15px;
@@ -53,40 +55,56 @@ img {
   width:0%;
   background:#38bdf8;
 }
-small { opacity:.7 }
+
+#debug {
+  margin-top:10px;
+  font-size:14px;
+  padding:8px;
+  border-radius:6px;
+  background:#020617;
+  border:1px dashed #334155;
+}
 </style>
 </head>
 
 <body>
 
 <h2>🖼️ Image Upscaler (WebGPU Lanczos3)</h2>
-<small>GPU Compute · Mode Mobile · Progress Real</small>
+<small>Compute Shader · Mode Mobile · Debug GPU</small>
 
 <div class="card">
+
   <input type="file" id="file" accept="image/*">
 
-  <input type="number" id="scale" value="2" min="1" step="1">
+  <label>
+    Upscale Berapa Kali (×)
+    <input type="number" id="scale" value="2" min="1" max="10" step="1">
+  </label>
 
   <label>
     <input type="checkbox" id="mobileMode">
-    Mode Mobile (Low Memory)
+    Mode Mobile (Low Memory / Tile)
+  </label>
+
+  <label>
+    <input type="checkbox" id="debugMode">
+    Mode Debug (cek GPU)
   </label>
 
   <button id="run">Upscale</button>
 
+  <div id="debug"></div>
+
   <div id="progressBox">
-    <div style="font-size:14px">
-      Processing… <span id="percent">0%</span>
-    </div>
-    <div id="barWrap">
-      <div id="bar"></div>
-    </div>
+    <div>Processing… <span id="percent">0%</span></div>
+    <div id="barWrap"><div id="bar"></div></div>
   </div>
 
   <canvas id="canvas" style="display:none"></canvas>
 
   <img id="out">
   <a id="dl" download="upscaled.png"></a>
+
 </div>
 
 <script type="module">
@@ -94,6 +112,8 @@ const file = document.getElementById("file");
 const run = document.getElementById("run");
 const scaleInput = document.getElementById("scale");
 const mobileToggle = document.getElementById("mobileMode");
+const debugToggle = document.getElementById("debugMode");
+
 const canvas = document.getElementById("canvas");
 const out = document.getElementById("out");
 const dl = document.getElementById("dl");
@@ -101,8 +121,23 @@ const dl = document.getElementById("dl");
 const progressBox = document.getElementById("progressBox");
 const bar = document.getElementById("bar");
 const percent = document.getElementById("percent");
+const debugBox = document.getElementById("debug");
 
 let img = new Image();
+
+function logDebug(msg) {
+  if (!debugToggle.checked) return;
+  debugBox.innerHTML += msg + "<br>";
+}
+
+function setProgress(v) {
+  bar.style.width = v + "%";
+  percent.textContent = v + "%";
+}
+
+function align256(n) {
+  return Math.ceil(n / 256) * 256;
+}
 
 file.onchange = e => {
   const f = e.target.files[0];
@@ -110,20 +145,22 @@ file.onchange = e => {
   img.src = URL.createObjectURL(f);
 };
 
-function setProgress(v) {
-  bar.style.width = v + "%";
-  percent.textContent = v + "%";
-}
-
 run.onclick = async () => {
+  debugBox.innerHTML = "";
+
   const scale = parseInt(scaleInput.value);
+  if (!img.src) {
+    alert("Upload gambar dulu");
+    return;
+  }
 
   if (!navigator.gpu) {
-    console.warn("WebGPU tidak tersedia → fallback canvas");
+    logDebug("❌ WebGPU tidak tersedia → fallback Canvas");
     upscaleCanvas(scale);
     return;
   }
 
+  logDebug("✅ WebGPU tersedia");
   await upscaleLanczosGPU(scale);
 };
 
@@ -139,7 +176,7 @@ function upscaleCanvas(scale) {
   const url = canvas.toDataURL("image/png");
   out.src = url;
   dl.href = url;
-  dl.textContent = "⬇ Download";
+  dl.textContent = "⬇ Download (Canvas)";
 }
 
 async function upscaleLanczosGPU(scale) {
@@ -156,6 +193,8 @@ async function upscaleLanczosGPU(scale) {
 
   const adapter = await navigator.gpu.requestAdapter();
   const device = await adapter.requestDevice();
+
+  logDebug("🎮 GPU Adapter OK");
 
   const bitmap = await createImageBitmap(img);
 
@@ -195,8 +234,9 @@ async function upscaleLanczosGPU(scale) {
       usage: GPUTextureUsage.STORAGE_BINDING | GPUTextureUsage.COPY_SRC
     });
 
+    const bytesPerRow = align256(W * 4);
     const buffer = device.createBuffer({
-      size: W * tileH * 4,
+      size: bytesPerRow * tileH,
       usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.MAP_READ
     });
 
@@ -220,18 +260,26 @@ async function upscaleLanczosGPU(scale) {
 
     encoder.copyTextureToBuffer(
       { texture: dstTex },
-      { buffer, bytesPerRow: W * 4 },
+      { buffer, bytesPerRow },
       [W, tileH]
     );
 
     device.queue.submit([encoder.finish()]);
 
     await buffer.mapAsync(GPUMapMode.READ);
-    const data = new Uint8ClampedArray(buffer.getMappedRange());
+    const mapped = new Uint8Array(buffer.getMappedRange());
+    const pixels = new Uint8ClampedArray(W * tileH * 4);
 
-    const imgData = new ImageData(data, W, tileH);
-    ctx.putImageData(imgData, 0, yOffset);
+    for (let y = 0; y < tileH; y++) {
+      const srcOffset = y * bytesPerRow;
+      const dstOffset = y * W * 4;
+      pixels.set(
+        mapped.subarray(srcOffset, srcOffset + W * 4),
+        dstOffset
+      );
+    }
 
+    ctx.putImageData(new ImageData(pixels, W, tileH), 0, yOffset);
     buffer.unmap();
 
     setProgress(Math.round(((t + 1) / totalTiles) * 100));
@@ -243,7 +291,7 @@ async function upscaleLanczosGPU(scale) {
   const url = canvas.toDataURL("image/png");
   out.src = url;
   dl.href = url;
-  dl.textContent = "⬇ Download";
+  dl.textContent = "⬇ Download (WebGPU)";
 }
 </script>
 </body>
