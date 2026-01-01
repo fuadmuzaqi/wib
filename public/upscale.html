@@ -19,9 +19,11 @@ body {
   padding:20px;
   border-radius:12px;
 }
-input,button {
+input,button,label {
   width:100%;
   margin-top:10px;
+}
+input,button {
   padding:10px;
   border-radius:8px;
   border:none;
@@ -36,20 +38,50 @@ img {
   margin-top:20px;
   border-radius:10px;
 }
+#progressBox {
+  display:none;
+  margin-top:15px;
+}
+#barWrap {
+  background:#1e293b;
+  border-radius:6px;
+  overflow:hidden;
+  height:10px;
+}
+#bar {
+  height:100%;
+  width:0%;
+  background:#38bdf8;
+}
 small { opacity:.7 }
 </style>
 </head>
 
 <body>
+
 <h2>🖼️ Image Upscaler (WebGPU Lanczos3)</h2>
-<small>GPU Compute Shader · Rasio Terkunci · Static</small>
+<small>GPU Compute · Mode Mobile · Progress Real</small>
 
 <div class="card">
   <input type="file" id="file" accept="image/*">
 
   <input type="number" id="scale" value="2" min="1" step="1">
 
+  <label>
+    <input type="checkbox" id="mobileMode">
+    Mode Mobile (Low Memory)
+  </label>
+
   <button id="run">Upscale</button>
+
+  <div id="progressBox">
+    <div style="font-size:14px">
+      Processing… <span id="percent">0%</span>
+    </div>
+    <div id="barWrap">
+      <div id="bar"></div>
+    </div>
+  </div>
 
   <canvas id="canvas" style="display:none"></canvas>
 
@@ -61,9 +93,14 @@ small { opacity:.7 }
 const file = document.getElementById("file");
 const run = document.getElementById("run");
 const scaleInput = document.getElementById("scale");
+const mobileToggle = document.getElementById("mobileMode");
 const canvas = document.getElementById("canvas");
 const out = document.getElementById("out");
 const dl = document.getElementById("dl");
+
+const progressBox = document.getElementById("progressBox");
+const bar = document.getElementById("bar");
+const percent = document.getElementById("percent");
 
 let img = new Image();
 
@@ -72,6 +109,11 @@ file.onchange = e => {
   if (!f) return;
   img.src = URL.createObjectURL(f);
 };
+
+function setProgress(v) {
+  bar.style.width = v + "%";
+  percent.textContent = v + "%";
+}
 
 run.onclick = async () => {
   const scale = parseInt(scaleInput.value);
@@ -101,8 +143,16 @@ function upscaleCanvas(scale) {
 }
 
 async function upscaleLanczosGPU(scale) {
+  const isMobile = mobileToggle.checked;
+
   const W = img.width * scale;
   const H = img.height * scale;
+
+  const TILE = isMobile ? 256 : H;
+  const totalTiles = Math.ceil(H / TILE);
+
+  progressBox.style.display = "block";
+  setProgress(0);
 
   const adapter = await navigator.gpu.requestAdapter();
   const device = await adapter.requestDevice();
@@ -121,12 +171,6 @@ async function upscaleLanczosGPU(scale) {
     [bitmap.width, bitmap.height]
   );
 
-  const dstTex = device.createTexture({
-    size: [W, H],
-    format: "rgba8unorm",
-    usage: GPUTextureUsage.STORAGE_BINDING | GPUTextureUsage.COPY_SRC
-  });
-
   const shaderCode = await fetch("./lanczos.wgsl").then(r => r.text());
 
   const pipeline = device.createComputePipeline({
@@ -137,33 +181,69 @@ async function upscaleLanczosGPU(scale) {
     }
   });
 
-  const bind = device.createBindGroup({
-    layout: pipeline.getBindGroupLayout(0),
-    entries: [
-      { binding: 0, resource: srcTex.createView() },
-      { binding: 1, resource: dstTex.createView() }
-    ]
-  });
-
-  const encoder = device.createCommandEncoder();
-  const pass = encoder.beginComputePass();
-  pass.setPipeline(pipeline);
-  pass.setBindGroup(0, bind);
-  pass.dispatchWorkgroups(Math.ceil(W / 8), Math.ceil(H / 8));
-  pass.end();
-
-  device.queue.submit([encoder.finish()]);
-
-  // Copy GPU result to canvas
   canvas.width = W;
   canvas.height = H;
   const ctx = canvas.getContext("2d");
-  ctx.drawImage(canvas, 0, 0);
+
+  for (let t = 0; t < totalTiles; t++) {
+    const yOffset = t * TILE;
+    const tileH = Math.min(TILE, H - yOffset);
+
+    const dstTex = device.createTexture({
+      size: [W, tileH],
+      format: "rgba8unorm",
+      usage: GPUTextureUsage.STORAGE_BINDING | GPUTextureUsage.COPY_SRC
+    });
+
+    const buffer = device.createBuffer({
+      size: W * tileH * 4,
+      usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.MAP_READ
+    });
+
+    const bind = device.createBindGroup({
+      layout: pipeline.getBindGroupLayout(0),
+      entries: [
+        { binding: 0, resource: srcTex.createView() },
+        { binding: 1, resource: dstTex.createView() }
+      ]
+    });
+
+    const encoder = device.createCommandEncoder();
+    const pass = encoder.beginComputePass();
+    pass.setPipeline(pipeline);
+    pass.setBindGroup(0, bind);
+    pass.dispatchWorkgroups(
+      Math.ceil(W / 8),
+      Math.ceil(tileH / 8)
+    );
+    pass.end();
+
+    encoder.copyTextureToBuffer(
+      { texture: dstTex },
+      { buffer, bytesPerRow: W * 4 },
+      [W, tileH]
+    );
+
+    device.queue.submit([encoder.finish()]);
+
+    await buffer.mapAsync(GPUMapMode.READ);
+    const data = new Uint8ClampedArray(buffer.getMappedRange());
+
+    const imgData = new ImageData(data, W, tileH);
+    ctx.putImageData(imgData, 0, yOffset);
+
+    buffer.unmap();
+
+    setProgress(Math.round(((t + 1) / totalTiles) * 100));
+    await new Promise(r => setTimeout(r, 0));
+  }
+
+  progressBox.style.display = "none";
 
   const url = canvas.toDataURL("image/png");
   out.src = url;
   dl.href = url;
-  dl.textContent = "⬇ Download (Lanczos3)";
+  dl.textContent = "⬇ Download";
 }
 </script>
 </body>
