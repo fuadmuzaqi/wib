@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<title>Image Upscaler – WebGPU Lanczos3</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<style>
+body {
+  background:#020617;
+  color:#e5e7eb;
+  font-family:system-ui;
+  max-width:800px;
+  margin:auto;
+  padding:20px;
+}
+.card {
+  border:1px solid #1e293b;
+  padding:20px;
+  border-radius:12px;
+}
+input,button {
+  width:100%;
+  margin-top:10px;
+  padding:10px;
+  border-radius:8px;
+  border:none;
+}
+button {
+  background:#38bdf8;
+  font-weight:bold;
+  cursor:pointer;
+}
+img {
+  max-width:100%;
+  margin-top:20px;
+  border-radius:10px;
+}
+small { opacity:.7 }
+</style>
+</head>
+
+<body>
+<h2>🖼️ Image Upscaler (WebGPU Lanczos3)</h2>
+<small>GPU Compute Shader · Rasio Terkunci · Static</small>
+
+<div class="card">
+  <input type="file" id="file" accept="image/*">
+
+  <input type="number" id="scale" value="2" min="1" step="1">
+
+  <button id="run">Upscale</button>
+
+  <canvas id="canvas" style="display:none"></canvas>
+
+  <img id="out">
+  <a id="dl" download="upscaled.png"></a>
+</div>
+
+<script type="module">
+const file = document.getElementById("file");
+const run = document.getElementById("run");
+const scaleInput = document.getElementById("scale");
+const canvas = document.getElementById("canvas");
+const out = document.getElementById("out");
+const dl = document.getElementById("dl");
+
+let img = new Image();
+
+file.onchange = e => {
+  const f = e.target.files[0];
+  if (!f) return;
+  img.src = URL.createObjectURL(f);
+};
+
+run.onclick = async () => {
+  const scale = parseInt(scaleInput.value);
+
+  if (!navigator.gpu) {
+    console.warn("WebGPU tidak tersedia → fallback canvas");
+    upscaleCanvas(scale);
+    return;
+  }
+
+  await upscaleLanczosGPU(scale);
+};
+
+function upscaleCanvas(scale) {
+  canvas.width = img.width * scale;
+  canvas.height = img.height * scale;
+
+  const ctx = canvas.getContext("2d");
+  ctx.imageSmoothingEnabled = true;
+  ctx.imageSmoothingQuality = "high";
+  ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+  const url = canvas.toDataURL("image/png");
+  out.src = url;
+  dl.href = url;
+  dl.textContent = "⬇ Download";
+}
+
+async function upscaleLanczosGPU(scale) {
+  const W = img.width * scale;
+  const H = img.height * scale;
+
+  const adapter = await navigator.gpu.requestAdapter();
+  const device = await adapter.requestDevice();
+
+  const bitmap = await createImageBitmap(img);
+
+  const srcTex = device.createTexture({
+    size: [bitmap.width, bitmap.height],
+    format: "rgba8unorm",
+    usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST
+  });
+
+  device.queue.copyExternalImageToTexture(
+    { source: bitmap },
+    { texture: srcTex },
+    [bitmap.width, bitmap.height]
+  );
+
+  const dstTex = device.createTexture({
+    size: [W, H],
+    format: "rgba8unorm",
+    usage: GPUTextureUsage.STORAGE_BINDING | GPUTextureUsage.COPY_SRC
+  });
+
+  const shaderCode = await fetch("./lanczos.wgsl").then(r => r.text());
+
+  const pipeline = device.createComputePipeline({
+    layout: "auto",
+    compute: {
+      module: device.createShaderModule({ code: shaderCode }),
+      entryPoint: "main"
+    }
+  });
+
+  const bind = device.createBindGroup({
+    layout: pipeline.getBindGroupLayout(0),
+    entries: [
+      { binding: 0, resource: srcTex.createView() },
+      { binding: 1, resource: dstTex.createView() }
+    ]
+  });
+
+  const encoder = device.createCommandEncoder();
+  const pass = encoder.beginComputePass();
+  pass.setPipeline(pipeline);
+  pass.setBindGroup(0, bind);
+  pass.dispatchWorkgroups(Math.ceil(W / 8), Math.ceil(H / 8));
+  pass.end();
+
+  device.queue.submit([encoder.finish()]);
+
+  // Copy GPU result to canvas
+  canvas.width = W;
+  canvas.height = H;
+  const ctx = canvas.getContext("2d");
+  ctx.drawImage(canvas, 0, 0);
+
+  const url = canvas.toDataURL("image/png");
+  out.src = url;
+  dl.href = url;
+  dl.textContent = "⬇ Download (Lanczos3)";
+}
+</script>
+</body>
+</html>
