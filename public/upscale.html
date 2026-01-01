@@ -1,298 +1,165 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-<meta charset="UTF-8">
-<title>Image Upscaler WebGPU Lanczos3</title>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <title>Image Upscaler (Rasio Terkunci)</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<style>
-body {
-  background:#020617;
-  color:#e5e7eb;
-  font-family:system-ui;
-  max-width:900px;
-  margin:auto;
-  padding:20px;
-}
-.card {
-  border:1px solid #1e293b;
-  padding:20px;
-  border-radius:12px;
-}
-input,button,label {
-  width:100%;
-  margin-top:10px;
-}
-input,button {
-  padding:10px;
-  border-radius:8px;
-  border:none;
-}
-button {
-  background:#38bdf8;
-  font-weight:bold;
-  cursor:pointer;
-}
-img {
-  max-width:100%;
-  margin-top:20px;
-  border-radius:10px;
-}
-small { opacity:.7 }
+  <style>
+    body {
+      font-family: system-ui, sans-serif;
+      background: #0f172a;
+      color: #e5e7eb;
+      padding: 20px;
+      max-width: 700px;
+      margin: auto;
+    }
 
-#progressBox {
-  display:none;
-  margin-top:15px;
-}
-#barWrap {
-  background:#1e293b;
-  border-radius:6px;
-  overflow:hidden;
-  height:10px;
-}
-#bar {
-  height:100%;
-  width:0%;
-  background:#38bdf8;
-}
+    h1 {
+      font-size: 1.5rem;
+      margin-bottom: 10px;
+    }
 
-#debug {
-  margin-top:10px;
-  font-size:14px;
-  padding:8px;
-  border-radius:6px;
-  background:#020617;
-  border:1px dashed #334155;
-}
-</style>
+    .card {
+      background: #020617;
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 10px 30px rgba(0,0,0,.4);
+    }
+
+    label {
+      display: block;
+      margin-top: 15px;
+      font-weight: 600;
+    }
+
+    input[type="file"],
+    input[type="number"] {
+      width: 100%;
+      margin-top: 5px;
+      padding: 8px;
+      border-radius: 8px;
+      border: none;
+    }
+
+    button {
+      margin-top: 20px;
+      width: 100%;
+      padding: 12px;
+      border-radius: 10px;
+      border: none;
+      background: #38bdf8;
+      color: #020617;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background: #0ea5e9;
+    }
+
+    img {
+      max-width: 100%;
+      margin-top: 20px;
+      border-radius: 10px;
+    }
+
+    a.download {
+      display: block;
+      text-align: center;
+      margin-top: 15px;
+      color: #38bdf8;
+      font-weight: 600;
+    }
+  </style>
 </head>
 
 <body>
+  <h1>🖼️ Image Upscaler (Rasio Terkunci)</h1>
 
-<h2>🖼️ Image Upscaler (WebGPU Lanczos3)</h2>
-<small>Compute Shader · Mode Mobile · Debug GPU</small>
+  <div class="card">
+    <label>Upload Gambar</label>
+    <input type="file" id="upload" accept="image/*">
 
-<div class="card">
+    <label>Lebar (px)</label>
+    <input type="number" id="widthInput" disabled>
 
-  <input type="file" id="file" accept="image/*">
+    <label>Tinggi (px)</label>
+    <input type="number" id="heightInput" disabled>
 
-  <label>
-    Upscale Berapa Kali (×)
-    <input type="number" id="scale" value="2" min="1" max="10" step="1">
-  </label>
+    <button id="processBtn" disabled>Upscale & Generate</button>
 
-  <label>
-    <input type="checkbox" id="mobileMode">
-    Mode Mobile (Low Memory / Tile)
-  </label>
+    <canvas id="canvas" style="display:none;"></canvas>
 
-  <label>
-    <input type="checkbox" id="debugMode">
-    Mode Debug (cek GPU)
-  </label>
-
-  <button id="run">Upscale</button>
-
-  <div id="debug"></div>
-
-  <div id="progressBox">
-    <div>Processing… <span id="percent">0%</span></div>
-    <div id="barWrap"><div id="bar"></div></div>
+    <img id="result" />
+    <a id="download" class="download" download="upscaled.png"></a>
   </div>
 
-  <canvas id="canvas" style="display:none"></canvas>
+  <script>
+    const upload = document.getElementById("upload");
+    const widthInput = document.getElementById("widthInput");
+    const heightInput = document.getElementById("heightInput");
+    const processBtn = document.getElementById("processBtn");
+    const canvas = document.getElementById("canvas");
+    const result = document.getElementById("result");
+    const download = document.getElementById("download");
 
-  <img id="out">
-  <a id="dl" download="upscaled.png"></a>
+    let img = new Image();
+    let aspectRatio = 1;
+    let lock = false;
 
-</div>
+    upload.addEventListener("change", (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
 
-<script type="module">
-const file = document.getElementById("file");
-const run = document.getElementById("run");
-const scaleInput = document.getElementById("scale");
-const mobileToggle = document.getElementById("mobileMode");
-const debugToggle = document.getElementById("debugMode");
+      img.src = URL.createObjectURL(file);
+      img.onload = () => {
+        aspectRatio = img.width / img.height;
 
-const canvas = document.getElementById("canvas");
-const out = document.getElementById("out");
-const dl = document.getElementById("dl");
+        widthInput.value = img.width;
+        heightInput.value = img.height;
 
-const progressBox = document.getElementById("progressBox");
-const bar = document.getElementById("bar");
-const percent = document.getElementById("percent");
-const debugBox = document.getElementById("debug");
+        widthInput.disabled = false;
+        heightInput.disabled = false;
+        processBtn.disabled = false;
 
-let img = new Image();
-
-function logDebug(msg) {
-  if (!debugToggle.checked) return;
-  debugBox.innerHTML += msg + "<br>";
-}
-
-function setProgress(v) {
-  bar.style.width = v + "%";
-  percent.textContent = v + "%";
-}
-
-function align256(n) {
-  return Math.ceil(n / 256) * 256;
-}
-
-file.onchange = e => {
-  const f = e.target.files[0];
-  if (!f) return;
-  img.src = URL.createObjectURL(f);
-};
-
-run.onclick = async () => {
-  debugBox.innerHTML = "";
-
-  const scale = parseInt(scaleInput.value);
-  if (!img.src) {
-    alert("Upload gambar dulu");
-    return;
-  }
-
-  if (!navigator.gpu) {
-    logDebug("❌ WebGPU tidak tersedia → fallback Canvas");
-    upscaleCanvas(scale);
-    return;
-  }
-
-  logDebug("✅ WebGPU tersedia");
-  await upscaleLanczosGPU(scale);
-};
-
-function upscaleCanvas(scale) {
-  canvas.width = img.width * scale;
-  canvas.height = img.height * scale;
-
-  const ctx = canvas.getContext("2d");
-  ctx.imageSmoothingEnabled = true;
-  ctx.imageSmoothingQuality = "high";
-  ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-
-  const url = canvas.toDataURL("image/png");
-  out.src = url;
-  dl.href = url;
-  dl.textContent = "⬇ Download (Canvas)";
-}
-
-async function upscaleLanczosGPU(scale) {
-  const isMobile = mobileToggle.checked;
-
-  const W = img.width * scale;
-  const H = img.height * scale;
-
-  const TILE = isMobile ? 256 : H;
-  const totalTiles = Math.ceil(H / TILE);
-
-  progressBox.style.display = "block";
-  setProgress(0);
-
-  const adapter = await navigator.gpu.requestAdapter();
-  const device = await adapter.requestDevice();
-
-  logDebug("🎮 GPU Adapter OK");
-
-  const bitmap = await createImageBitmap(img);
-
-  const srcTex = device.createTexture({
-    size: [bitmap.width, bitmap.height],
-    format: "rgba8unorm",
-    usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST
-  });
-
-  device.queue.copyExternalImageToTexture(
-    { source: bitmap },
-    { texture: srcTex },
-    [bitmap.width, bitmap.height]
-  );
-
-  const shaderCode = await fetch("./lanczos.wgsl").then(r => r.text());
-
-  const pipeline = device.createComputePipeline({
-    layout: "auto",
-    compute: {
-      module: device.createShaderModule({ code: shaderCode }),
-      entryPoint: "main"
-    }
-  });
-
-  canvas.width = W;
-  canvas.height = H;
-  const ctx = canvas.getContext("2d");
-
-  for (let t = 0; t < totalTiles; t++) {
-    const yOffset = t * TILE;
-    const tileH = Math.min(TILE, H - yOffset);
-
-    const dstTex = device.createTexture({
-      size: [W, tileH],
-      format: "rgba8unorm",
-      usage: GPUTextureUsage.STORAGE_BINDING | GPUTextureUsage.COPY_SRC
+        lock = false;
+      };
     });
 
-    const bytesPerRow = align256(W * 4);
-    const buffer = device.createBuffer({
-      size: bytesPerRow * tileH,
-      usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.MAP_READ
+    widthInput.addEventListener("input", () => {
+      if (lock) return;
+      lock = true;
+      heightInput.value = Math.round(widthInput.value / aspectRatio);
+      lock = false;
     });
 
-    const bind = device.createBindGroup({
-      layout: pipeline.getBindGroupLayout(0),
-      entries: [
-        { binding: 0, resource: srcTex.createView() },
-        { binding: 1, resource: dstTex.createView() }
-      ]
+    heightInput.addEventListener("input", () => {
+      if (lock) return;
+      lock = true;
+      widthInput.value = Math.round(heightInput.value * aspectRatio);
+      lock = false;
     });
 
-    const encoder = device.createCommandEncoder();
-    const pass = encoder.beginComputePass();
-    pass.setPipeline(pipeline);
-    pass.setBindGroup(0, bind);
-    pass.dispatchWorkgroups(
-      Math.ceil(W / 8),
-      Math.ceil(tileH / 8)
-    );
-    pass.end();
+    processBtn.addEventListener("click", () => {
+      const w = parseInt(widthInput.value);
+      const h = parseInt(heightInput.value);
 
-    encoder.copyTextureToBuffer(
-      { texture: dstTex },
-      { buffer, bytesPerRow },
-      [W, tileH]
-    );
+      canvas.width = w;
+      canvas.height = h;
 
-    device.queue.submit([encoder.finish()]);
+      const ctx = canvas.getContext("2d");
+      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingQuality = "high";
 
-    await buffer.mapAsync(GPUMapMode.READ);
-    const mapped = new Uint8Array(buffer.getMappedRange());
-    const pixels = new Uint8ClampedArray(W * tileH * 4);
+      ctx.drawImage(img, 0, 0, w, h);
 
-    for (let y = 0; y < tileH; y++) {
-      const srcOffset = y * bytesPerRow;
-      const dstOffset = y * W * 4;
-      pixels.set(
-        mapped.subarray(srcOffset, srcOffset + W * 4),
-        dstOffset
-      );
-    }
+      const dataURL = canvas.toDataURL("image/png");
 
-    ctx.putImageData(new ImageData(pixels, W, tileH), 0, yOffset);
-    buffer.unmap();
-
-    setProgress(Math.round(((t + 1) / totalTiles) * 100));
-    await new Promise(r => setTimeout(r, 0));
-  }
-
-  progressBox.style.display = "none";
-
-  const url = canvas.toDataURL("image/png");
-  out.src = url;
-  dl.href = url;
-  dl.textContent = "⬇ Download (WebGPU)";
-}
-</script>
+      result.src = dataURL;
+      download.href = dataURL;
+      download.textContent = "⬇️ Download Gambar";
+    });
+  </script>
 </body>
 </html>
