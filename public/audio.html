@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>MP3 Volume Booster</title>
+<title>MP3 Volume Booster + Limiter</title>
 
 <style>
 body {
@@ -47,6 +47,11 @@ audio {
   text-align: center;
   font-weight: bold;
 }
+.info {
+  font-size: 0.85rem;
+  opacity: 0.8;
+  text-align: center;
+}
 </style>
 </head>
 
@@ -60,18 +65,19 @@ audio {
   <input type="range" min="0" max="1000" value="100" id="volume">
   <div class="value">Volume: <span id="volText">100</span></div>
 
+  <div class="info">🧠 Auto limiter aktif (anti pecah)</div>
+
   <audio id="preview" controls></audio>
 
   <button class="primary" id="previewBtn">Preview</button>
   <button class="secondary" id="downloadBtn" disabled>Download MP3</button>
 </div>
 
-<!-- LAME MP3 WASM -->
 <script src="https://cdn.jsdelivr.net/npm/lamejs@1.2.1/lame.min.js"></script>
 
 <script>
 let audioBuffer;
-let renderedBuffer;
+let finalBuffer;
 
 const fileInput = document.getElementById("fileInput");
 const volume = document.getElementById("volume");
@@ -82,56 +88,84 @@ const downloadBtn = document.getElementById("downloadBtn");
 volume.oninput = () => volText.textContent = volume.value;
 
 fileInput.onchange = async () => {
-  const file = fileInput.files[0];
-  if (!file) return;
-
   const ctx = new AudioContext();
-  audioBuffer = await ctx.decodeAudioData(await file.arrayBuffer());
-  preview.src = URL.createObjectURL(file);
+  audioBuffer = await ctx.decodeAudioData(await fileInput.files[0].arrayBuffer());
+  preview.src = URL.createObjectURL(fileInput.files[0]);
   downloadBtn.disabled = true;
 };
 
 document.getElementById("previewBtn").onclick = async () => {
   if (!audioBuffer) return alert("Upload MP3 dulu");
 
-  const scale = volume.value / 100;
+  const userGain = volume.value / 100;
+
+  // 🔊 First pass
+  let buffer = await renderWithGain(audioBuffer, userGain);
+
+  // 🧠 Limiter check
+  const peak = getPeak(buffer);
+  let limiterGain = 1;
+
+  if (peak > 0.99) {
+    limiterGain = 0.99 / peak;
+    buffer = await renderWithGain(buffer, limiterGain);
+  }
+
+  finalBuffer = buffer;
+  preview.src = URL.createObjectURL(bufferToWav(buffer));
+  downloadBtn.disabled = false;
+};
+
+downloadBtn.onclick = () => {
+  const mp3Blob = encodeMP3(finalBuffer);
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(mp3Blob);
+  a.download = "volume_limited.mp3";
+  a.click();
+};
+
+// ================= AUDIO UTILS =================
+
+async function renderWithGain(sourceBuffer, gainValue) {
   const offline = new OfflineAudioContext(
-    audioBuffer.numberOfChannels,
-    audioBuffer.length,
-    audioBuffer.sampleRate
+    sourceBuffer.numberOfChannels,
+    sourceBuffer.length,
+    sourceBuffer.sampleRate
   );
 
   const src = offline.createBufferSource();
   const gain = offline.createGain();
-  gain.gain.value = scale;
 
-  src.buffer = audioBuffer;
+  src.buffer = sourceBuffer;
+  gain.gain.value = gainValue;
+
   src.connect(gain);
   gain.connect(offline.destination);
   src.start();
 
-  renderedBuffer = await offline.startRendering();
-  preview.src = URL.createObjectURL(bufferToWav(renderedBuffer));
-  downloadBtn.disabled = false;
-};
+  return await offline.startRendering();
+}
 
-downloadBtn.onclick = async () => {
-  const mp3Blob = encodeMP3(renderedBuffer);
-  const a = document.createElement("a");
-  a.href = URL.createObjectURL(mp3Blob);
-  a.download = "volume_boosted.mp3";
-  a.click();
-};
+function getPeak(buffer) {
+  let peak = 0;
+  for (let ch = 0; ch < buffer.numberOfChannels; ch++) {
+    const data = buffer.getChannelData(ch);
+    for (let i = 0; i < data.length; i++) {
+      peak = Math.max(peak, Math.abs(data[i]));
+    }
+  }
+  return peak;
+}
 
 function bufferToWav(buffer) {
-  const len = buffer.length * 2;
-  const ab = new ArrayBuffer(44 + len);
+  const length = buffer.length * 2;
+  const ab = new ArrayBuffer(44 + length);
   const view = new DataView(ab);
 
   const write = (o, s) => [...s].forEach((c,i)=>view.setUint8(o+i,c.charCodeAt(0)));
 
   write(0,"RIFF");
-  view.setUint32(4,36+len,true);
+  view.setUint32(4,36+length,true);
   write(8,"WAVEfmt ");
   view.setUint32(16,16,true);
   view.setUint16(20,1,true);
@@ -141,7 +175,7 @@ function bufferToWav(buffer) {
   view.setUint16(32,2,true);
   view.setUint16(34,16,true);
   write(36,"data");
-  view.setUint32(40,len,true);
+  view.setUint32(40,length,true);
 
   let offset = 44;
   const data = buffer.getChannelData(0);
@@ -154,24 +188,24 @@ function bufferToWav(buffer) {
 
 function encodeMP3(buffer) {
   const samples = buffer.getChannelData(0);
-  const mp3enc = new lamejs.Mp3Encoder(1, buffer.sampleRate, 192);
-  const mp3Data = [];
+  const enc = new lamejs.Mp3Encoder(1, buffer.sampleRate, 192);
+  const mp3 = [];
   const block = 1152;
 
-  for (let i = 0; i < samples.length; i += block) {
-    const slice = samples.subarray(i, i + block);
+  for (let i=0;i<samples.length;i+=block) {
+    const slice = samples.subarray(i,i+block);
     const pcm = new Int16Array(slice.length);
-    for (let j=0;j<slice.length;j++){
-      pcm[j] = Math.max(-1,Math.min(1,slice[j])) * 0x7fff;
+    for (let j=0;j<slice.length;j++) {
+      pcm[j] = Math.max(-1,Math.min(1,slice[j]))*0x7fff;
     }
-    const mp3buf = mp3enc.encodeBuffer(pcm);
-    if (mp3buf.length) mp3Data.push(mp3buf);
+    const buf = enc.encodeBuffer(pcm);
+    if (buf.length) mp3.push(buf);
   }
 
-  const end = mp3enc.flush();
-  if (end.length) mp3Data.push(end);
+  const end = enc.flush();
+  if (end.length) mp3.push(end);
 
-  return new Blob(mp3Data,{type:"audio/mp3"});
+  return new Blob(mp3,{type:"audio/mp3"});
 }
 </script>
 </body>
