@@ -16,7 +16,6 @@
       --accent: #7c3aed;
       --red: #ef4444;
       --green: #22c55e;
-      --warn: #f59e0b;
       --chip: rgba(255,255,255,.10);
       --chip2: rgba(255,255,255,.14);
     }
@@ -44,7 +43,6 @@
       color: var(--text);
       min-height:100vh;
     }
-    a{color:inherit}
 
     .wrap{
       max-width: 1100px;
@@ -116,11 +114,10 @@
       background: linear-gradient(180deg, rgba(124,58,237,.30), rgba(124,58,237,.16));
       border-color: rgba(124,58,237,.35);
     }
-    .btn.ghost{
-      background: transparent;
-    }
+    .btn.ghost{ background: transparent; }
     select, input{padding: 10px 10px}
-    input{width: 140px}
+    input{width: 170px}
+
     .pill{
       display:inline-flex;
       align-items:center;
@@ -144,7 +141,6 @@
       gap: 14px;
       align-items:start;
     }
-
     @media (max-width: 920px){
       .grid{grid-template-columns: 1fr}
       header{position: static}
@@ -207,8 +203,6 @@
       text-align:center;
       padding: 8px 0;
       border-radius: 10px;
-      background: transparent;
-      border: 1px dashed transparent;
     }
 
     .days{
@@ -251,33 +245,6 @@
       font-size: 14px;
       line-height: 1;
     }
-    .badge{
-      display:inline-flex;
-      align-items:center;
-      gap: 6px;
-      padding: 6px 8px;
-      border-radius: 999px;
-      font-size: 11px;
-      border: 1px solid var(--border);
-      background: var(--chip);
-      color: var(--muted);
-      white-space: nowrap;
-    }
-    .badge.red{
-      border-color: rgba(239,68,68,.35);
-      background: rgba(239,68,68,.12);
-      color: color-mix(in srgb, var(--red) 85%, var(--text) 15%);
-    }
-    .badge.green{
-      border-color: rgba(34,197,94,.35);
-      background: rgba(34,197,94,.12);
-      color: color-mix(in srgb, var(--green) 85%, var(--text) 15%);
-    }
-    .badge.today{
-      border-color: rgba(124,58,237,.35);
-      background: rgba(124,58,237,.12);
-      color: color-mix(in srgb, var(--accent) 85%, var(--text) 15%);
-    }
 
     .mini{
       font-size: 11px;
@@ -287,10 +254,33 @@
       gap: 6px;
       flex-wrap: wrap;
     }
-    .mini span{
-      background: transparent;
-      border: 1px solid transparent;
-      padding: 0;
+
+    /* Warna tanggal (tanpa tag) */
+    .day.redDay{
+      background: linear-gradient(180deg, rgba(239,68,68,.22), rgba(239,68,68,.08));
+      border-color: rgba(239,68,68,.35);
+    }
+    .day.greenDay{
+      background: linear-gradient(180deg, rgba(34,197,94,.22), rgba(34,197,94,.08));
+      border-color: rgba(34,197,94,.35);
+    }
+
+    /* Hari ini: titik hijau kedip di kanan atas */
+    .todayBlink{
+      position:absolute;
+      top:10px;
+      right:10px;
+      width:10px;
+      height:10px;
+      border-radius:50%;
+      background: rgba(34,197,94,1);
+      box-shadow: 0 0 0 0 rgba(34,197,94,.55);
+      animation: pulse 1.1s ease-in-out infinite;
+    }
+    @keyframes pulse{
+      0%   { transform: scale(.85); box-shadow: 0 0 0 0 rgba(34,197,94,.55); opacity:.95; }
+      60%  { transform: scale(1.05); box-shadow: 0 0 0 10px rgba(34,197,94,0); opacity:1; }
+      100% { transform: scale(.85); box-shadow: 0 0 0 0 rgba(34,197,94,0); opacity:.85; }
     }
 
     .panel{
@@ -370,9 +360,9 @@
       <div class="title">
         <h1>Kalender 2026 — Libur, Cuti, Hijriyah, Pasaran, Sholat</h1>
         <div class="sub">
-          <span class="pill"><span class="dot red"></span>Tanggal merah: Minggu + libur nasional</span>
-          <span class="pill"><span class="dot green"></span>Tanggal hijau: cuti bersama</span>
-          <span class="pill"><span class="dot purple"></span>Detail: klik tanggal</span>
+          <span class="pill"><span class="dot red"></span>Merah: Minggu + libur nasional</span>
+          <span class="pill"><span class="dot green"></span>Hijau: cuti bersama</span>
+          <span class="pill"><span class="dot purple"></span>Klik tanggal untuk detail</span>
         </div>
       </div>
 
@@ -393,8 +383,8 @@
             <div class="hint" id="monthHint">—</div>
           </div>
           <div class="nav">
-            <span class="pill" title="Lokasi default untuk jadwal sholat">
-              Lokasi: <b id="locLabel" style="font-weight:800">Kediri, ID</b>
+            <span class="pill" title="Lokasi jadwal sholat">
+              Lokasi: <b id="locLabel" style="font-weight:800">Kediri, Indonesia</b>
             </span>
           </div>
         </div>
@@ -438,15 +428,13 @@
           <div class="hr"></div>
 
           <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
-            <input id="cityInput" placeholder="Kota (default: Kediri)" />
-            <input id="countryInput" placeholder="Negara (default: Indonesia)" />
+            <select id="citySelect" title="Pilih kota di Jawa Timur"></select>
+            <input id="customCityInput" placeholder="Kota lain (opsional)" style="display:none" />
             <input id="methodInput" placeholder="Metode (default: 11)" />
-            <button class="btn" id="applyLocBtn">Terapkan lokasi</button>
+            <button class="btn" id="applyLocBtn">Terapkan</button>
           </div>
 
-          <div class="note" id="apiNote">
-            Jadwal sholat diambil saat tanggal dipilih.
-          </div>
+          <div class="note" id="apiNote">Jadwal sholat diambil saat tanggal dipilih.</div>
 
           <div class="times" id="times">
             <div class="timeBox"><div class="t">Imsak</div><div class="h" id="t_imsak">—</div></div>
@@ -469,9 +457,7 @@
 (() => {
   const YEAR = 2026;
 
-  // Libur nasional & cuti bersama 2026 (untuk warna): isi berdasarkan SKB (via ringkasan JDIH). 
-  // Tanggal merah = (Minggu) atau (tanggal libur nasional).
-  // Tanggal hijau = cuti bersama.
+  // Libur nasional & cuti bersama 2026
   const HOLIDAYS = new Map([
     ["2026-01-01", "Tahun Baru 2026 Masehi"],
     ["2026-01-16", "Isra Mikraj Nabi Muhammad S.A.W."],
@@ -503,11 +489,15 @@
     ["2026-12-24", "Cuti Bersama Kelahiran Yesus Kristus (Natal)"],
   ]);
 
-  // Pasaran Jawa (5 hari): referensi epoch untuk hitung siklus.
-  // Berdasarkan rujukan kalender Jawa: 1 Januari 1970 adalah Kamis Wage.
+  // Pasaran Jawa (5 hari) - epoch: 1970-01-01 = Kamis Wage
   const PASARAN = ["Legi", "Pahing", "Pon", "Wage", "Kliwon"];
-  const BASE_UTC = Date.UTC(1970, 0, 1); // 1970-01-01
+  const BASE_UTC = Date.UTC(1970, 0, 1);
   const BASE_PASARAN_INDEX = 3; // Wage
+
+  // 9 kota di Jawa Timur
+  const JATIM_CITIES = [
+    "Batu","Blitar","Kediri","Madiun","Malang","Mojokerto","Pasuruan","Probolinggo","Surabaya"
+  ];
 
   const monthNames = [
     "Januari","Februari","Maret","April","Mei","Juni",
@@ -515,7 +505,6 @@
   ];
   const dowNames = ["Min","Sen","Sel","Rab","Kam","Jum","Sab"];
 
-  // Theme
   const root = document.documentElement;
   const themeBtn = document.getElementById("themeBtn");
   const savedTheme = localStorage.getItem("theme") || "dark";
@@ -525,7 +514,6 @@
     localStorage.setItem("theme", root.dataset.theme);
   });
 
-  // Elements
   const monthSelect = document.getElementById("monthSelect");
   const monthTitle  = document.getElementById("monthTitle");
   const monthHint   = document.getElementById("monthHint");
@@ -546,29 +534,58 @@
   const t_isya   = document.getElementById("t_isya");
   const apiNote  = document.getElementById("apiNote");
 
-  const cityInput = document.getElementById("cityInput");
-  const countryInput = document.getElementById("countryInput");
+  const citySelect = document.getElementById("citySelect");
+  const customCityInput = document.getElementById("customCityInput");
   const methodInput = document.getElementById("methodInput");
   const applyLocBtn = document.getElementById("applyLocBtn");
   const locLabel = document.getElementById("locLabel");
 
   let cfg = {
     city: localStorage.getItem("city") || "Kediri",
-    country: localStorage.getItem("country") || "Indonesia",
-    method: localStorage.getItem("method") || "11", // default aman (bisa diganti)
+    country: "Indonesia",
+    method: localStorage.getItem("method") || "11",
   };
-  cityInput.value = cfg.city;
-  countryInput.value = cfg.country;
   methodInput.value = cfg.method;
   locLabel.textContent = `${cfg.city}, ${cfg.country}`;
 
+  function fillCitySelect(){
+    citySelect.innerHTML = "";
+    for (const c of JATIM_CITIES){
+      const opt = document.createElement("option");
+      opt.value = c;
+      opt.textContent = c;
+      citySelect.appendChild(opt);
+    }
+    const optCustom = document.createElement("option");
+    optCustom.value = "__custom__";
+    optCustom.textContent = "Kota lain…";
+    citySelect.appendChild(optCustom);
+
+    if (JATIM_CITIES.includes(cfg.city)) citySelect.value = cfg.city;
+    else citySelect.value = "__custom__";
+    customCityInput.style.display = (citySelect.value === "__custom__") ? "" : "none";
+    if (citySelect.value === "__custom__") customCityInput.value = cfg.city;
+  }
+  fillCitySelect();
+
+  citySelect.addEventListener("change", () => {
+    if (citySelect.value === "__custom__") {
+      customCityInput.style.display = "";
+      customCityInput.focus();
+    } else {
+      customCityInput.style.display = "none";
+    }
+  });
+
   applyLocBtn.addEventListener("click", () => {
-    cfg.city = (cityInput.value || "Kediri").trim();
-    cfg.country = (countryInput.value || "Indonesia").trim();
+    if (citySelect.value === "__custom__") cfg.city = (customCityInput.value || "Kediri").trim();
+    else cfg.city = citySelect.value;
+
     cfg.method = (methodInput.value || "11").trim();
+
     localStorage.setItem("city", cfg.city);
-    localStorage.setItem("country", cfg.country);
     localStorage.setItem("method", cfg.method);
+
     locLabel.textContent = `${cfg.city}, ${cfg.country}`;
     apiNote.textContent = "Lokasi diterapkan. Pilih tanggal lagi untuk refresh jadwal sholat.";
   });
@@ -590,7 +607,6 @@
   }
 
   let currentMonth = 0;
-
   const today = new Date();
   const isTodayYear = today.getFullYear() === YEAR;
   if (isTodayYear) currentMonth = today.getMonth();
@@ -630,7 +646,6 @@
   }
 
   function hijriApprox(date){
-    // Pakai Intl Islamic calendar (fallback bila ada).
     try {
       return new Intl.DateTimeFormat("id-ID-u-ca-islamic", { day:"numeric", month:"long", year:"numeric"}).format(date);
     } catch {
@@ -643,7 +658,7 @@
   }
 
   function setTimes(times){
-    const clean = (s) => (s || "—").replace(/\s*\(.*\)\s*/g, ""); // buang "(WIB)" dll bila ada
+    const clean = (s) => (s || "—").replace(/\s*\(.*\)\s*/g, "");
     t_imsak.textContent  = clean(times.Imsak);
     t_subuh.textContent  = clean(times.Fajr);
     t_dzuhur.textContent = clean(times.Dhuhr);
@@ -657,8 +672,7 @@
   }
 
   async function fetchPrayerTimesByCity(y,m,d){
-    // AlAdhan endpoint (timingsByCity) format date "DD-MM-YYYY"
-    const dateStr = `${pad2(d)}-${pad2(m)}-${y}`;
+    const dateStr = `${pad2(d)}-${pad2(m)}-${y}`; // DD-MM-YYYY
     const url = new URL(`https://api.aladhan.com/v1/timingsByCity/${dateStr}`);
     url.searchParams.set("city", cfg.city);
     url.searchParams.set("country", cfg.country);
@@ -667,8 +681,7 @@
     apiNote.textContent = "Mengambil jadwal sholat…";
     const resp = await fetch(url.toString());
     if (!resp.ok) throw new Error("Gagal mengambil data");
-    const json = await resp.json();
-    return json;
+    return await resp.json();
   }
 
   let selectedIso = null;
@@ -679,7 +692,6 @@
     const iso = isoDate(y,m,d);
     selectedIso = iso;
 
-    // Update detail basic
     d_masehi.textContent = date.toLocaleDateString("id-ID", { weekday:"long", day:"numeric", month:"long", year:"numeric" });
     d_hijri.textContent  = hijriApprox(date);
     d_pas.textContent    = getPasaran(y,m,d);
@@ -688,33 +700,29 @@
     const holiday = HOLIDAYS.get(iso);
     const cuti = CUTI.get(iso);
 
-    if (holiday || isSunday) {
-      d_status.textContent = "Tanggal merah";
-    } else if (cuti) {
-      d_status.textContent = "Cuti bersama";
-    } else {
-      d_status.textContent = "Hari kerja (biasa)";
-    }
+    if (holiday || isSunday) d_status.textContent = "Tanggal merah";
+    else if (cuti) d_status.textContent = "Cuti bersama";
+    else d_status.textContent = "Hari kerja (biasa)";
 
     d_ket.textContent = holiday || cuti || (isSunday ? "Hari Minggu" : "—");
 
     clearTimes();
 
-    // Fetch prayer times for selected date
     try{
       const json = await fetchPrayerTimesByCity(y,m,d);
-      if (selectedIso !== iso) return; // user already clicked other date
+      if (selectedIso !== iso) return;
+
       const timings = json?.data?.timings || {};
       setTimes(timings);
 
-      // Prefer hijri from API if available
       const hijri = json?.data?.date?.hijri;
       if (hijri && hijri.day && hijri.month && hijri.year) {
         d_hijri.textContent = `${hijri.day} ${hijri.month.en} ${hijri.year} H`;
       }
+
       apiNote.textContent = `Sumber jadwal sholat: AlAdhan (method=${cfg.method}).`;
     } catch (e){
-      apiNote.textContent = "Tidak bisa mengambil jadwal sholat. Coba ganti kota/negara/metode atau cek koneksi.";
+      apiNote.textContent = "Tidak bisa mengambil jadwal sholat. Coba ganti kota/metode atau cek koneksi.";
     }
   }
 
@@ -748,35 +756,35 @@
       const cell = document.createElement("div");
       cell.className = "day";
 
-      // badges
-      const badges = [];
+      // Warna tanpa tag
+      if (holiday || isSunday) cell.classList.add("redDay");
+      else if (cuti) cell.classList.add("greenDay");
+
       const now = new Date();
       const isToday = (now.getFullYear()===YEAR && now.getMonth()===currentMonth && now.getDate()===d);
-
-      if (isToday) badges.push(`<span class="badge today">Hari ini</span>`);
-      if (holiday || isSunday) badges.push(`<span class="badge red">Merah</span>`);
-      if (cuti) badges.push(`<span class="badge green">Cuti</span>`);
 
       const pasaran = getPasaran(YEAR, m, d);
 
       cell.innerHTML = `
         <div class="top">
           <div class="dateNum">${d}</div>
-          <div style="display:flex; gap:6px; flex-wrap:wrap; justify-content:flex-end;">
-            ${badges.join("")}
-          </div>
         </div>
         <div class="mini">
           <span>${pasaran}</span>
-          <span>${holiday ? "Libur" : (cuti ? "Cuti" : "")}</span>
         </div>
       `;
+
+      if (isToday){
+        const blink = document.createElement("span");
+        blink.className = "todayBlink";
+        blink.title = "Hari ini";
+        cell.appendChild(blink);
+      }
 
       cell.addEventListener("click", () => selectDate(d));
       daysEl.appendChild(cell);
     }
 
-    // auto select first day (atau hari ini bila ada)
     if (isTodayYear && today.getMonth() === currentMonth) selectDate(today.getDate());
     else selectDate(1);
   }
