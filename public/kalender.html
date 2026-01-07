@@ -1,0 +1,788 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Kalender 2026 (Libur + Cuti + Hijriyah + Pasaran + Sholat)</title>
+  <style>
+    :root{
+      --bg: #0b1020;
+      --card: rgba(255,255,255,.06);
+      --card2: rgba(255,255,255,.08);
+      --text: rgba(255,255,255,.92);
+      --muted: rgba(255,255,255,.65);
+      --border: rgba(255,255,255,.12);
+      --shadow: 0 18px 50px rgba(0,0,0,.45);
+      --accent: #7c3aed;
+      --red: #ef4444;
+      --green: #22c55e;
+      --warn: #f59e0b;
+      --chip: rgba(255,255,255,.10);
+      --chip2: rgba(255,255,255,.14);
+    }
+    :root[data-theme="light"]{
+      --bg: #f6f7fb;
+      --card: rgba(0,0,0,.04);
+      --card2: rgba(0,0,0,.06);
+      --text: rgba(0,0,0,.88);
+      --muted: rgba(0,0,0,.60);
+      --border: rgba(0,0,0,.10);
+      --shadow: 0 18px 50px rgba(0,0,0,.14);
+      --accent: #6d28d9;
+      --chip: rgba(0,0,0,.06);
+      --chip2: rgba(0,0,0,.10);
+    }
+
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, "Noto Sans", "Helvetica Neue", sans-serif;
+      background: radial-gradient(1200px 700px at 20% 10%, rgba(124,58,237,.35), transparent 55%),
+                  radial-gradient(1200px 700px at 80% 0%, rgba(34,197,94,.22), transparent 50%),
+                  radial-gradient(900px 600px at 90% 80%, rgba(239,68,68,.20), transparent 55%),
+                  var(--bg);
+      color: var(--text);
+      min-height:100vh;
+    }
+    a{color:inherit}
+
+    .wrap{
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 18px 14px 32px;
+      display: grid;
+      gap: 14px;
+    }
+
+    header{
+      display:flex;
+      gap: 10px;
+      align-items:center;
+      justify-content: space-between;
+      padding: 14px 14px;
+      border: 1px solid var(--border);
+      background: linear-gradient(180deg, var(--card2), var(--card));
+      border-radius: 16px;
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(10px);
+      position: sticky;
+      top: 10px;
+      z-index: 5;
+    }
+    .title{
+      display:flex;
+      flex-direction: column;
+      gap: 3px;
+      min-width: 0;
+    }
+    .title h1{
+      margin:0;
+      font-size: 16px;
+      letter-spacing: .2px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .title .sub{
+      font-size: 12px;
+      color: var(--muted);
+      display:flex;
+      gap:8px;
+      flex-wrap: wrap;
+    }
+
+    .toolbar{
+      display:flex;
+      gap: 8px;
+      align-items:center;
+      flex-wrap: wrap;
+      justify-content:flex-end;
+    }
+    .btn, select, input{
+      border: 1px solid var(--border);
+      background: var(--chip);
+      color: var(--text);
+      border-radius: 12px;
+      padding: 10px 12px;
+      font-size: 13px;
+      outline: none;
+    }
+    .btn{
+      cursor:pointer;
+      user-select:none;
+    }
+    .btn:active{transform: translateY(1px)}
+    .btn.primary{
+      background: linear-gradient(180deg, rgba(124,58,237,.30), rgba(124,58,237,.16));
+      border-color: rgba(124,58,237,.35);
+    }
+    .btn.ghost{
+      background: transparent;
+    }
+    select, input{padding: 10px 10px}
+    input{width: 140px}
+    .pill{
+      display:inline-flex;
+      align-items:center;
+      gap: 8px;
+      padding: 8px 10px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: var(--chip);
+      font-size: 12px;
+      color: var(--muted);
+      white-space: nowrap;
+    }
+    .dot{width:10px;height:10px;border-radius:50%}
+    .dot.red{background: var(--red)}
+    .dot.green{background: var(--green)}
+    .dot.purple{background: var(--accent)}
+
+    .grid{
+      display:grid;
+      grid-template-columns: 1.55fr 1fr;
+      gap: 14px;
+      align-items:start;
+    }
+
+    @media (max-width: 920px){
+      .grid{grid-template-columns: 1fr}
+      header{position: static}
+      input{width: 100%}
+    }
+
+    .card{
+      border: 1px solid var(--border);
+      background: linear-gradient(180deg, var(--card2), var(--card));
+      border-radius: 18px;
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(10px);
+      overflow:hidden;
+    }
+
+    .cal-head{
+      display:flex;
+      justify-content: space-between;
+      align-items:center;
+      gap: 10px;
+      padding: 14px 14px 10px;
+      border-bottom: 1px solid var(--border);
+    }
+    .cal-head .left{
+      display:flex;
+      flex-direction: column;
+      gap: 4px;
+      min-width:0;
+    }
+    .monthTitle{
+      font-size: 15px;
+      font-weight: 700;
+      letter-spacing:.2px;
+      margin:0;
+      white-space: nowrap;
+      overflow:hidden;
+      text-overflow: ellipsis;
+    }
+    .hint{
+      font-size: 12px;
+      color: var(--muted);
+    }
+    .cal-head .nav{
+      display:flex;
+      gap: 8px;
+      align-items:center;
+      flex-wrap: wrap;
+      justify-content:flex-end;
+    }
+
+    .dow{
+      display:grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 8px;
+      padding: 10px 12px 0;
+    }
+    .dow div{
+      font-size: 12px;
+      color: var(--muted);
+      text-align:center;
+      padding: 8px 0;
+      border-radius: 10px;
+      background: transparent;
+      border: 1px dashed transparent;
+    }
+
+    .days{
+      display:grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 8px;
+      padding: 10px 12px 14px;
+    }
+
+    .day{
+      border: 1px solid var(--border);
+      background: rgba(255,255,255,.02);
+      border-radius: 14px;
+      padding: 10px 10px 8px;
+      min-height: 72px;
+      cursor:pointer;
+      position: relative;
+      overflow:hidden;
+      display:flex;
+      flex-direction: column;
+      gap: 6px;
+      justify-content: space-between;
+      transition: transform .08s ease, border-color .15s ease, background .15s ease;
+    }
+    :root[data-theme="light"] .day{background: rgba(0,0,0,.015)}
+    .day:hover{transform: translateY(-1px); border-color: rgba(124,58,237,.35)}
+    .day.muted{
+      opacity: .45;
+      cursor: default;
+      border-style: dashed;
+    }
+    .day .top{
+      display:flex;
+      justify-content: space-between;
+      align-items:flex-start;
+      gap: 8px;
+    }
+    .dateNum{
+      font-weight: 800;
+      font-size: 14px;
+      line-height: 1;
+    }
+    .badge{
+      display:inline-flex;
+      align-items:center;
+      gap: 6px;
+      padding: 6px 8px;
+      border-radius: 999px;
+      font-size: 11px;
+      border: 1px solid var(--border);
+      background: var(--chip);
+      color: var(--muted);
+      white-space: nowrap;
+    }
+    .badge.red{
+      border-color: rgba(239,68,68,.35);
+      background: rgba(239,68,68,.12);
+      color: color-mix(in srgb, var(--red) 85%, var(--text) 15%);
+    }
+    .badge.green{
+      border-color: rgba(34,197,94,.35);
+      background: rgba(34,197,94,.12);
+      color: color-mix(in srgb, var(--green) 85%, var(--text) 15%);
+    }
+    .badge.today{
+      border-color: rgba(124,58,237,.35);
+      background: rgba(124,58,237,.12);
+      color: color-mix(in srgb, var(--accent) 85%, var(--text) 15%);
+    }
+
+    .mini{
+      font-size: 11px;
+      color: var(--muted);
+      display:flex;
+      justify-content: space-between;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+    .mini span{
+      background: transparent;
+      border: 1px solid transparent;
+      padding: 0;
+    }
+
+    .panel{
+      padding: 14px;
+      display:flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .panel h2{
+      margin: 0;
+      font-size: 14px;
+      letter-spacing:.2px;
+    }
+    .panel .meta{
+      display:flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .kv{
+      padding: 10px 12px;
+      border-radius: 14px;
+      border: 1px solid var(--border);
+      background: var(--chip);
+      min-width: 140px;
+      flex: 1;
+    }
+    .kv .k{
+      font-size: 11px;
+      color: var(--muted);
+      margin-bottom: 4px;
+    }
+    .kv .v{
+      font-size: 13px;
+      font-weight: 700;
+      line-height: 1.2;
+    }
+
+    .times{
+      display:grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+    }
+    @media (max-width: 520px){
+      .times{grid-template-columns: repeat(2, 1fr)}
+    }
+    .timeBox{
+      padding: 10px 12px;
+      border-radius: 14px;
+      border: 1px solid var(--border);
+      background: var(--chip);
+    }
+    .timeBox .t{
+      font-size: 11px;
+      color: var(--muted);
+      margin-bottom: 3px;
+    }
+    .timeBox .h{
+      font-size: 14px;
+      font-weight: 800;
+    }
+
+    .note{
+      font-size: 12px;
+      color: var(--muted);
+      line-height: 1.45;
+    }
+    .hr{
+      height: 1px;
+      background: var(--border);
+      margin: 2px 0;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div class="title">
+        <h1>Kalender 2026 — Libur, Cuti, Hijriyah, Pasaran, Sholat</h1>
+        <div class="sub">
+          <span class="pill"><span class="dot red"></span>Tanggal merah: Minggu + libur nasional</span>
+          <span class="pill"><span class="dot green"></span>Tanggal hijau: cuti bersama</span>
+          <span class="pill"><span class="dot purple"></span>Detail: klik tanggal</span>
+        </div>
+      </div>
+
+      <div class="toolbar">
+        <select id="monthSelect" title="Pilih bulan"></select>
+        <button class="btn ghost" id="prevBtn" title="Bulan sebelumnya">◀</button>
+        <button class="btn ghost" id="nextBtn" title="Bulan berikutnya">▶</button>
+        <button class="btn primary" id="todayBtn" title="Ke hari ini">Hari ini</button>
+        <button class="btn" id="themeBtn" title="Ganti mode">Dark/Light</button>
+      </div>
+    </header>
+
+    <div class="grid">
+      <div class="card">
+        <div class="cal-head">
+          <div class="left">
+            <p class="monthTitle" id="monthTitle">—</p>
+            <div class="hint" id="monthHint">—</div>
+          </div>
+          <div class="nav">
+            <span class="pill" title="Lokasi default untuk jadwal sholat">
+              Lokasi: <b id="locLabel" style="font-weight:800">Kediri, ID</b>
+            </span>
+          </div>
+        </div>
+
+        <div class="dow" id="dow"></div>
+        <div class="days" id="days"></div>
+      </div>
+
+      <div class="card">
+        <div class="panel">
+          <h2>Detail tanggal</h2>
+
+          <div class="meta">
+            <div class="kv">
+              <div class="k">Tanggal (Masehi)</div>
+              <div class="v" id="d_masehi">Klik salah satu tanggal</div>
+            </div>
+            <div class="kv">
+              <div class="k">Hijriyah</div>
+              <div class="v" id="d_hijri">—</div>
+            </div>
+            <div class="kv">
+              <div class="k">Pasaran Jawa</div>
+              <div class="v" id="d_pasaran">—</div>
+            </div>
+          </div>
+
+          <div class="hr"></div>
+
+          <div class="meta">
+            <div class="kv">
+              <div class="k">Status</div>
+              <div class="v" id="d_status">—</div>
+            </div>
+            <div class="kv">
+              <div class="k">Keterangan</div>
+              <div class="v" id="d_ket">—</div>
+            </div>
+          </div>
+
+          <div class="hr"></div>
+
+          <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
+            <input id="cityInput" placeholder="Kota (default: Kediri)" />
+            <input id="countryInput" placeholder="Negara (default: Indonesia)" />
+            <input id="methodInput" placeholder="Metode (default: 11)" />
+            <button class="btn" id="applyLocBtn">Terapkan lokasi</button>
+          </div>
+
+          <div class="note" id="apiNote">
+            Jadwal sholat diambil saat tanggal dipilih.
+          </div>
+
+          <div class="times" id="times">
+            <div class="timeBox"><div class="t">Imsak</div><div class="h" id="t_imsak">—</div></div>
+            <div class="timeBox"><div class="t">Subuh</div><div class="h" id="t_subuh">—</div></div>
+            <div class="timeBox"><div class="t">Dzuhur</div><div class="h" id="t_dzuhur">—</div></div>
+            <div class="timeBox"><div class="t">Ashar</div><div class="h" id="t_ashar">—</div></div>
+            <div class="timeBox"><div class="t">Magrib</div><div class="h" id="t_magrib">—</div></div>
+            <div class="timeBox"><div class="t">Isya</div><div class="h" id="t_isya">—</div></div>
+          </div>
+
+          <div class="note" style="margin-top:6px">
+            Tips: jadwal sholat dipengaruhi metode perhitungan; ubah “Metode” bila ingin menyesuaikan preferensi.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<script>
+(() => {
+  const YEAR = 2026;
+
+  // Libur nasional & cuti bersama 2026 (untuk warna): isi berdasarkan SKB (via ringkasan JDIH). 
+  // Tanggal merah = (Minggu) atau (tanggal libur nasional).
+  // Tanggal hijau = cuti bersama.
+  const HOLIDAYS = new Map([
+    ["2026-01-01", "Tahun Baru 2026 Masehi"],
+    ["2026-01-16", "Isra Mikraj Nabi Muhammad S.A.W."],
+    ["2026-02-17", "Tahun Baru Imlek 2577 Kongzili"],
+    ["2026-03-19", "Hari Suci Nyepi (Tahun Baru Saka 1948)"],
+    ["2026-03-21", "Idul Fitri 1447 Hijriah"],
+    ["2026-03-22", "Idul Fitri 1447 Hijriah"],
+    ["2026-04-03", "Wafat Yesus Kristus"],
+    ["2026-04-05", "Kebangkitan Yesus Kristus (Paskah)"],
+    ["2026-05-01", "Hari Buruh Internasional"],
+    ["2026-05-14", "Kenaikan Yesus Kristus"],
+    ["2026-05-27", "Idul Adha 1447 Hijriah"],
+    ["2026-05-31", "Hari Raya Waisak 2570 BE"],
+    ["2026-06-01", "Hari Lahir Pancasila"],
+    ["2026-06-16", "1 Muharam Tahun Baru Islam 1448 Hijriah"],
+    ["2026-08-17", "Proklamasi Kemerdekaan"],
+    ["2026-08-25", "Maulid Nabi Muhammad S.A.W."],
+    ["2026-12-25", "Kelahiran Yesus Kristus"],
+  ]);
+
+  const CUTI = new Map([
+    ["2026-02-16", "Cuti Bersama Tahun Baru Imlek 2577 Kongzili"],
+    ["2026-03-18", "Cuti Bersama Hari Suci Nyepi"],
+    ["2026-03-20", "Cuti Bersama Idul Fitri 1447 Hijriah"],
+    ["2026-03-23", "Cuti Bersama Idul Fitri 1447 Hijriah"],
+    ["2026-03-24", "Cuti Bersama Idul Fitri 1447 Hijriah"],
+    ["2026-05-15", "Cuti Bersama Kenaikan Yesus Kristus"],
+    ["2026-05-28", "Cuti Bersama Idul Adha 1447 Hijriah"],
+    ["2026-12-24", "Cuti Bersama Kelahiran Yesus Kristus (Natal)"],
+  ]);
+
+  // Pasaran Jawa (5 hari): referensi epoch untuk hitung siklus.
+  // Berdasarkan rujukan kalender Jawa: 1 Januari 1970 adalah Kamis Wage.
+  const PASARAN = ["Legi", "Pahing", "Pon", "Wage", "Kliwon"];
+  const BASE_UTC = Date.UTC(1970, 0, 1); // 1970-01-01
+  const BASE_PASARAN_INDEX = 3; // Wage
+
+  const monthNames = [
+    "Januari","Februari","Maret","April","Mei","Juni",
+    "Juli","Agustus","September","Oktober","November","Desember"
+  ];
+  const dowNames = ["Min","Sen","Sel","Rab","Kam","Jum","Sab"];
+
+  // Theme
+  const root = document.documentElement;
+  const themeBtn = document.getElementById("themeBtn");
+  const savedTheme = localStorage.getItem("theme") || "dark";
+  root.dataset.theme = savedTheme;
+  themeBtn.addEventListener("click", () => {
+    root.dataset.theme = (root.dataset.theme === "dark") ? "light" : "dark";
+    localStorage.setItem("theme", root.dataset.theme);
+  });
+
+  // Elements
+  const monthSelect = document.getElementById("monthSelect");
+  const monthTitle  = document.getElementById("monthTitle");
+  const monthHint   = document.getElementById("monthHint");
+  const dowEl       = document.getElementById("dow");
+  const daysEl      = document.getElementById("days");
+
+  const d_masehi = document.getElementById("d_masehi");
+  const d_hijri  = document.getElementById("d_hijri");
+  const d_pas    = document.getElementById("d_pasaran");
+  const d_status = document.getElementById("d_status");
+  const d_ket    = document.getElementById("d_ket");
+
+  const t_imsak  = document.getElementById("t_imsak");
+  const t_subuh  = document.getElementById("t_subuh");
+  const t_dzuhur = document.getElementById("t_dzuhur");
+  const t_ashar  = document.getElementById("t_ashar");
+  const t_magrib = document.getElementById("t_magrib");
+  const t_isya   = document.getElementById("t_isya");
+  const apiNote  = document.getElementById("apiNote");
+
+  const cityInput = document.getElementById("cityInput");
+  const countryInput = document.getElementById("countryInput");
+  const methodInput = document.getElementById("methodInput");
+  const applyLocBtn = document.getElementById("applyLocBtn");
+  const locLabel = document.getElementById("locLabel");
+
+  let cfg = {
+    city: localStorage.getItem("city") || "Kediri",
+    country: localStorage.getItem("country") || "Indonesia",
+    method: localStorage.getItem("method") || "11", // default aman (bisa diganti)
+  };
+  cityInput.value = cfg.city;
+  countryInput.value = cfg.country;
+  methodInput.value = cfg.method;
+  locLabel.textContent = `${cfg.city}, ${cfg.country}`;
+
+  applyLocBtn.addEventListener("click", () => {
+    cfg.city = (cityInput.value || "Kediri").trim();
+    cfg.country = (countryInput.value || "Indonesia").trim();
+    cfg.method = (methodInput.value || "11").trim();
+    localStorage.setItem("city", cfg.city);
+    localStorage.setItem("country", cfg.country);
+    localStorage.setItem("method", cfg.method);
+    locLabel.textContent = `${cfg.city}, ${cfg.country}`;
+    apiNote.textContent = "Lokasi diterapkan. Pilih tanggal lagi untuk refresh jadwal sholat.";
+  });
+
+  // Fill month select
+  for (let i = 0; i < 12; i++) {
+    const opt = document.createElement("option");
+    opt.value = String(i);
+    opt.textContent = `${monthNames[i]} ${YEAR}`;
+    monthSelect.appendChild(opt);
+  }
+
+  // DOW header
+  dowEl.innerHTML = "";
+  for (const d of dowNames) {
+    const div = document.createElement("div");
+    div.textContent = d;
+    dowEl.appendChild(div);
+  }
+
+  let currentMonth = 0;
+
+  const today = new Date();
+  const isTodayYear = today.getFullYear() === YEAR;
+  if (isTodayYear) currentMonth = today.getMonth();
+  monthSelect.value = String(currentMonth);
+
+  document.getElementById("prevBtn").addEventListener("click", () => {
+    currentMonth = Math.max(0, currentMonth - 1);
+    monthSelect.value = String(currentMonth);
+    render();
+  });
+  document.getElementById("nextBtn").addEventListener("click", () => {
+    currentMonth = Math.min(11, currentMonth + 1);
+    monthSelect.value = String(currentMonth);
+    render();
+  });
+  document.getElementById("todayBtn").addEventListener("click", () => {
+    if (!isTodayYear) return;
+    currentMonth = today.getMonth();
+    monthSelect.value = String(currentMonth);
+    render();
+    selectDate(today.getDate());
+  });
+
+  monthSelect.addEventListener("change", () => {
+    currentMonth = parseInt(monthSelect.value, 10);
+    render();
+  });
+
+  function pad2(n){ return String(n).padStart(2, "0"); }
+  function isoDate(y,m,d){ return `${y}-${pad2(m)}-${pad2(d)}`; }
+
+  function getPasaran(y,m,d){
+    const utc = Date.UTC(y, m-1, d);
+    const diffDays = Math.floor((utc - BASE_UTC) / 86400000);
+    const idx = (BASE_PASARAN_INDEX + diffDays) % 5;
+    return PASARAN[(idx + 5) % 5];
+  }
+
+  function hijriApprox(date){
+    // Pakai Intl Islamic calendar (fallback bila ada).
+    try {
+      return new Intl.DateTimeFormat("id-ID-u-ca-islamic", { day:"numeric", month:"long", year:"numeric"}).format(date);
+    } catch {
+      try {
+        return new Intl.DateTimeFormat("en-u-ca-islamic", { day:"numeric", month:"long", year:"numeric"}).format(date);
+      } catch {
+        return "Tidak didukung browser";
+      }
+    }
+  }
+
+  function setTimes(times){
+    const clean = (s) => (s || "—").replace(/\s*\(.*\)\s*/g, ""); // buang "(WIB)" dll bila ada
+    t_imsak.textContent  = clean(times.Imsak);
+    t_subuh.textContent  = clean(times.Fajr);
+    t_dzuhur.textContent = clean(times.Dhuhr);
+    t_ashar.textContent  = clean(times.Asr);
+    t_magrib.textContent = clean(times.Maghrib);
+    t_isya.textContent   = clean(times.Isha);
+  }
+
+  function clearTimes(){
+    setTimes({Imsak:"—",Fajr:"—",Dhuhr:"—",Asr:"—",Maghrib:"—",Isha:"—"});
+  }
+
+  async function fetchPrayerTimesByCity(y,m,d){
+    // AlAdhan endpoint (timingsByCity) format date "DD-MM-YYYY"
+    const dateStr = `${pad2(d)}-${pad2(m)}-${y}`;
+    const url = new URL(`https://api.aladhan.com/v1/timingsByCity/${dateStr}`);
+    url.searchParams.set("city", cfg.city);
+    url.searchParams.set("country", cfg.country);
+    url.searchParams.set("method", cfg.method);
+
+    apiNote.textContent = "Mengambil jadwal sholat…";
+    const resp = await fetch(url.toString());
+    if (!resp.ok) throw new Error("Gagal mengambil data");
+    const json = await resp.json();
+    return json;
+  }
+
+  let selectedIso = null;
+
+  async function selectDate(dayNum){
+    const y = YEAR, m = currentMonth + 1, d = dayNum;
+    const date = new Date(y, currentMonth, d);
+    const iso = isoDate(y,m,d);
+    selectedIso = iso;
+
+    // Update detail basic
+    d_masehi.textContent = date.toLocaleDateString("id-ID", { weekday:"long", day:"numeric", month:"long", year:"numeric" });
+    d_hijri.textContent  = hijriApprox(date);
+    d_pas.textContent    = getPasaran(y,m,d);
+
+    const isSunday = date.getDay() === 0;
+    const holiday = HOLIDAYS.get(iso);
+    const cuti = CUTI.get(iso);
+
+    if (holiday || isSunday) {
+      d_status.textContent = "Tanggal merah";
+    } else if (cuti) {
+      d_status.textContent = "Cuti bersama";
+    } else {
+      d_status.textContent = "Hari kerja (biasa)";
+    }
+
+    d_ket.textContent = holiday || cuti || (isSunday ? "Hari Minggu" : "—");
+
+    clearTimes();
+
+    // Fetch prayer times for selected date
+    try{
+      const json = await fetchPrayerTimesByCity(y,m,d);
+      if (selectedIso !== iso) return; // user already clicked other date
+      const timings = json?.data?.timings || {};
+      setTimes(timings);
+
+      // Prefer hijri from API if available
+      const hijri = json?.data?.date?.hijri;
+      if (hijri && hijri.day && hijri.month && hijri.year) {
+        d_hijri.textContent = `${hijri.day} ${hijri.month.en} ${hijri.year} H`;
+      }
+      apiNote.textContent = `Sumber jadwal sholat: AlAdhan (method=${cfg.method}).`;
+    } catch (e){
+      apiNote.textContent = "Tidak bisa mengambil jadwal sholat. Coba ganti kota/negara/metode atau cek koneksi.";
+    }
+  }
+
+  function render(){
+    const m = currentMonth + 1;
+    monthTitle.textContent = `${monthNames[currentMonth]} ${YEAR}`;
+    monthHint.textContent = "Klik tanggal untuk lihat Hijriyah, pasaran, dan jadwal sholat.";
+
+    daysEl.innerHTML = "";
+
+    const first = new Date(YEAR, currentMonth, 1);
+    const startDow = first.getDay(); // 0=Min
+    const daysInMonth = new Date(YEAR, currentMonth + 1, 0).getDate();
+
+    // Leading blanks
+    for (let i = 0; i < startDow; i++){
+      const cell = document.createElement("div");
+      cell.className = "day muted";
+      cell.innerHTML = `<div class="top"><div class="dateNum">—</div></div><div class="mini"><span></span></div>`;
+      daysEl.appendChild(cell);
+    }
+
+    for (let d = 1; d <= daysInMonth; d++){
+      const date = new Date(YEAR, currentMonth, d);
+      const iso = isoDate(YEAR, m, d);
+
+      const isSunday = date.getDay() === 0;
+      const holiday = HOLIDAYS.get(iso);
+      const cuti = CUTI.get(iso);
+
+      const cell = document.createElement("div");
+      cell.className = "day";
+
+      // badges
+      const badges = [];
+      const now = new Date();
+      const isToday = (now.getFullYear()===YEAR && now.getMonth()===currentMonth && now.getDate()===d);
+
+      if (isToday) badges.push(`<span class="badge today">Hari ini</span>`);
+      if (holiday || isSunday) badges.push(`<span class="badge red">Merah</span>`);
+      if (cuti) badges.push(`<span class="badge green">Cuti</span>`);
+
+      const pasaran = getPasaran(YEAR, m, d);
+
+      cell.innerHTML = `
+        <div class="top">
+          <div class="dateNum">${d}</div>
+          <div style="display:flex; gap:6px; flex-wrap:wrap; justify-content:flex-end;">
+            ${badges.join("")}
+          </div>
+        </div>
+        <div class="mini">
+          <span>${pasaran}</span>
+          <span>${holiday ? "Libur" : (cuti ? "Cuti" : "")}</span>
+        </div>
+      `;
+
+      cell.addEventListener("click", () => selectDate(d));
+      daysEl.appendChild(cell);
+    }
+
+    // auto select first day (atau hari ini bila ada)
+    if (isTodayYear && today.getMonth() === currentMonth) selectDate(today.getDate());
+    else selectDate(1);
+  }
+
+  render();
+})();
+</script>
+</body>
+</html>
