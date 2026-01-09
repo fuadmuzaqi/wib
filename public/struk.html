@@ -3,159 +3,124 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Kasir 58mm - Fix Cetak</title>
+    <title>Kasir 58mm PRO</title>
 
     <style>
         :root {
             --primary: #2563eb;
-            --danger: #dc2626;
-            --bg: #f8fafc;
-            --card: #ffffff;
+            --bg: #f1f5f9;
             --text: #1e293b;
-            --struk-width: 230px; 
+            /* Lebar spesifik untuk thermal 58mm agar tidak meluber */
+            --struk-width: 52mm; 
         }
 
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         
         body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            font-family: -apple-system, system-ui, sans-serif;
             background: var(--bg);
             color: var(--text);
             margin: 0;
-            padding: 16px;
+            padding: 10px;
             display: flex;
             justify-content: center;
         }
 
-        .container {
-            width: 100%;
-            max-width: 450px;
-        }
+        .container { width: 100%; max-width: 420px; }
 
+        /* UI CARD */
         .card {
-            background: var(--card);
-            padding: 18px;
-            border-radius: 16px;
-            box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1);
-            margin-bottom: 20px;
+            background: #fff;
+            padding: 15px;
+            border-radius: 12px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            margin-bottom: 15px;
         }
-
-        h3 { margin-top: 0; font-size: 1.1rem; color: var(--primary); }
 
         input, button {
             width: 100%;
-            min-height: 48px;
-            padding: 12px;
-            margin: 8px 0;
-            border-radius: 10px;
-            border: 1px solid #e2e8f0;
+            min-height: 45px;
+            padding: 10px;
+            margin: 5px 0;
+            border-radius: 8px;
+            border: 1px solid #ddd;
             font-size: 16px;
         }
-
-        input:focus { outline: none; border-color: var(--primary); }
 
         .barang-row {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 8px;
-            background: #f1f5f9;
-            padding: 12px;
-            border-radius: 12px;
-            margin-bottom: 12px;
+            gap: 5px;
+            background: #f8fafc;
+            padding: 10px;
+            border-radius: 8px;
+            margin-bottom: 8px;
             position: relative;
+            border: 1px solid #eee;
         }
-
         .barang-row input:first-child { grid-column: span 2; }
 
         .btn-del {
-            position: absolute;
-            top: -8px;
-            right: -8px;
-            width: 26px;
-            height: 26px;
-            min-height: 26px;
-            background: var(--danger);
-            color: white;
-            border: none;
-            border-radius: 50%;
-            padding: 0;
-            display: flex; align-items: center; justify-content: center;
-            font-size: 12px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            position: absolute; top: -5px; right: -5px;
+            width: 24px; height: 24px; min-height: 24px;
+            background: #ef4444; color: #fff; border: none;
+            border-radius: 50%; font-size: 10px; cursor: pointer;
         }
 
-        .btn-add { background: #f1f5f9; color: var(--text); border: 1px dashed #cbd5e1; font-weight: 600; }
-        .btn-primary { background: var(--primary); color: white; border: none; font-weight: 700; margin-top: 16px; cursor: pointer; }
-        
-        /* TOMBOL CETAK */
-        .btn-print { 
-            background: #1e293b; 
-            color: white; 
-            border: none; 
-            font-weight: 700; 
-            display: none; /* Sembunyi sampai dihitung */
-        }
+        .btn-add { background: #e2e8f0; border: 1px dashed #cbd5e1; font-weight: bold; }
+        .btn-primary { background: var(--primary); color: #fff; border: none; font-weight: bold; margin-top: 10px; }
+        .btn-print { background: #000; color: #fff; border: none; font-weight: bold; margin-top: 15px; display: none; }
 
-        /* STRUK PREVIEW */
+        /* ==========================================
+           ESTETIKA STRUK (MONOSPACE)
+           ========================================== */
         #struk-container {
             display: none;
             justify-content: center;
-            background: #cbd5e1;
-            padding: 20px 10px;
-            border-radius: 12px;
-            margin-top: 10px;
+            padding: 15px 0;
+            background: #ccc;
+            border-radius: 8px;
         }
 
         .struk {
-            background: white;
-            font-family: 'Courier New', Courier, monospace;
-            padding: 12px;
-            color: black;
+            background: #fff;
+            font-family: 'Courier New', Courier, monospace; /* Kembali ke font struk asli */
+            padding: 10px;
             width: var(--struk-width);
+            color: #000;
             font-size: 12px;
-            line-height: 1.3;
+            line-height: 1.2;
         }
 
         .center { text-align: center; }
-        .toko-name { font-weight: bold; font-size: 16px; text-transform: uppercase; }
-        .line { border-top: 1px dashed #000; margin: 6px 0; }
-        .row { display: flex; justify-content: space-between; gap: 4px; }
+        .toko-name { font-weight: bold; font-size: 15px; text-transform: uppercase; }
+        .line { border-top: 1px dashed #000; margin: 5px 0; }
+        .row { display: flex; justify-content: space-between; align-items: flex-start; }
+        .item-name { word-break: break-all; display: block; }
 
         /* ==========================================
-           PERBAIKAN FITUR CETAK (HANYA STRUK)
+           FIX PRINT 1 LEMBAR & 58mm
            ========================================== */
         @media print {
-            /* Sembunyikan SEMUA elemen di halaman */
-            body * {
-                visibility: hidden;
+            @page { 
+                margin: 0; 
+                size: 58mm auto; /* Memaksa ukuran kertas thermal */
+            }
+            body { background: #fff; padding: 0; margin: 0; }
+            .container > *:not(#struk-container) { display: none !important; }
+            #struk-container { 
+                display: block !important; 
+                padding: 0 !important; 
+                margin: 0 !important;
                 background: none !important;
             }
-            
-            /* Tampilkan HANYA area struk dan isinya */
-            #struk, #struk * {
-                visibility: visible;
+            .struk { 
+                width: 54mm !important; /* Sedikit lebih kecil dari 58mm agar aman */
+                padding: 2mm !important;
+                box-shadow: none !important;
+                margin: 0 auto !important;
             }
-
-            /* Posisi struk di pojok kiri atas kertas */
-            #struk {
-                position: absolute;
-                left: 0;
-                top: 0;
-                width: 100% !important;
-                padding: 0;
-                margin: 0;
-            }
-
-            #struk-container {
-                background: none !important;
-                padding: 0 !important;
-                display: block !important;
-            }
-
-            /* Hilangkan margin kertas bawaan browser */
-            @page {
-                margin: 0;
-            }
+            button, input { display: none !important; }
         }
     </style>
 </head>
@@ -163,18 +128,15 @@
 
 <div class="container">
     <div class="card">
-        <h3>🏢 Info Toko</h3>
         <input id="toko" placeholder="Nama Toko">
         <input id="alamat" placeholder="Alamat Singkat">
-        <input id="hp" type="tel" placeholder="Nomor HP">
+        <input id="hp" type="tel" placeholder="No HP">
     </div>
 
     <div class="card">
-        <h3>📦 Input Barang</h3>
         <div id="barang-list"></div>
-        <button class="btn-add" onclick="tambahBarang()">+ Tambah Item</button>
-
-        <div style="margin-top: 20px; border-top: 1px solid #f1f5f9; padding-top: 10px;">
+        <button class="btn-add" onclick="tambahBarang()">+ TAMBAH BARANG</button>
+        <div style="margin-top: 15px; border-top: 2px solid #eee; padding-top: 10px;">
             <input id="uang" type="number" placeholder="Uang Tunai (Rp)">
             <button class="btn-primary" onclick="hitung()">HITUNG TOTAL</button>
         </div>
@@ -183,32 +145,31 @@
     <div id="struk-container">
         <div id="struk" class="struk">
             <div class="center toko-name" id="sToko"></div>
-            <div class="center" id="sAlamat" style="font-size: 10px;"></div>
-            <div class="center" id="sHp" style="font-size: 10px;"></div>
-            <div class="center" id="sWaktu" style="font-size: 10px;"></div>
+            <div class="center" id="sAlamat"></div>
+            <div class="center" id="sHp"></div>
+            <div class="center" id="sWaktu"></div>
 
             <div class="line"></div>
             <div id="sBarang"></div>
             <div class="line"></div>
 
-            <div class="row"><strong>TOTAL</strong><strong id="sTotal"></strong></div>
+            <div class="row"><span>TOTAL</span><span id="sTotal"></span></div>
             <div class="row"><span>BAYAR</span><span id="sBayar"></span></div>
             <div class="row"><span>KEMBALI</span><span id="sKembali"></span></div>
 
             <div class="line"></div>
             <div class="center" style="margin-top: 5px;">TERIMA KASIH</div>
-            <div class="center" style="font-size: 9px;">Barang yang sudah dibeli<br>tidak dapat ditukar.</div>
         </div>
     </div>
 
-    <button id="btn-print-main" class="btn-print" onclick="window.print()">🖨️ CETAK STRUK SEKARANG</button>
+    <button id="btn-print" class="btn-print" onclick="window.print()">PRINT STRUK (58mm)</button>
 </div>
 
 <script>
     const list = document.getElementById("barang-list");
 
-    function rupiah(n) {
-        return "Rp " + n.toLocaleString("id-ID");
+    function formatRupiah(n) {
+        return n.toLocaleString("id-ID");
     }
 
     function tambahBarang() {
@@ -223,6 +184,7 @@
         list.appendChild(d);
     }
 
+    // Inisialisasi awal
     tambahBarang();
 
     function hitung() {
@@ -240,40 +202,38 @@
             if (nama && qty > 0) {
                 valid = true;
                 html += `
-                    <div class="item-name">${nama}</div>
+                    <div class="item-name">${nama.toUpperCase()}</div>
                     <div class="row">
-                        <span>${qty} x ${harga.toLocaleString('id-ID')}</span>
-                        <span>${sub.toLocaleString('id-ID')}</span>
+                        <span>${qty} x ${formatRupiah(harga)}</span>
+                        <span>${formatRupiah(sub)}</span>
                     </div>
                 `;
                 total += sub;
             }
         });
 
-        if(!valid) {
-            alert("Isi minimal satu barang!");
-            return;
-        }
+        if(!valid) return alert("Isi barang dengan benar!");
 
         const bayar = Number(document.getElementById("uang").value || 0);
         const now = new Date();
-        const waktu = now.toLocaleDateString("id-ID") + " " + now.toLocaleTimeString("id-ID", {hour: '2-digit', minute:'2-digit'});
+        const waktu = now.toLocaleDateString("id-ID") + " " + now.toLocaleTimeString("id-ID", {hour:'2-digit', minute:'2-digit'});
 
+        // Data Struk
         document.getElementById("sToko").textContent = document.getElementById("toko").value || "TOKO SAYA";
         document.getElementById("sAlamat").textContent = document.getElementById("alamat").value;
-        document.getElementById("sHp").textContent = document.getElementById("hp").value ? "HP: " + document.getElementById("hp").value : "";
+        document.getElementById("sHp").textContent = document.getElementById("hp").value ? "Telp: "+document.getElementById("hp").value : "";
         document.getElementById("sWaktu").textContent = waktu;
         document.getElementById("sBarang").innerHTML = html;
-        document.getElementById("sTotal").textContent = rupiah(total);
-        document.getElementById("sBayar").textContent = rupiah(bayar);
-        document.getElementById("sKembali").textContent = rupiah(bayar - total);
+        document.getElementById("sTotal").textContent = formatRupiah(total);
+        document.getElementById("sBayar").textContent = formatRupiah(bayar);
+        document.getElementById("sKembali").textContent = formatRupiah(bayar - total);
         
-        // Tampilkan Struk dan Tombol Cetak
+        // Tampilkan Preview & Tombol Print
         document.getElementById("struk-container").style.display = "flex";
-        document.getElementById("btn-print-main").style.display = "block";
-        document.getElementById("btn-print-main").scrollIntoView({ behavior: 'smooth' });
+        document.getElementById("btn-print").style.display = "block";
+        document.getElementById("btn-print").scrollIntoView({ behavior: 'smooth' });
     }
 </script>
 
 </body>
-                </html>
+</html>
