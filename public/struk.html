@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Kasir Ringan - Struk Toko</title>
+    <title>Kasir 58mm - Edisi Simpel</title>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 
@@ -15,6 +15,8 @@
             --bg: #f8fafc;
             --card: #ffffff;
             --text: #1e293b;
+            /* Lebar standar thermal 58mm di browser adalah sekitar 220px-240px */
+            --struk-width: 230px; 
         }
 
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -31,38 +33,31 @@
 
         .container {
             width: 100%;
-            max-width: 500px;
+            max-width: 450px;
         }
 
         .card {
             background: var(--card);
-            padding: 20px;
+            padding: 18px;
             border-radius: 16px;
-            shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
             box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1);
             margin-bottom: 20px;
         }
 
-        h3 { margin-top: 0; font-size: 1.2rem; color: var(--primary); }
+        h3 { margin-top: 0; font-size: 1.1rem; color: var(--primary); display: flex; align-items: center; gap: 8px; }
 
-        /* Form Styling */
-        input, select, button {
+        input, button {
             width: 100%;
-            min-height: 48px; /* Standard mobile touch size */
+            min-height: 48px;
             padding: 12px;
             margin: 8px 0;
             border-radius: 10px;
             border: 1px solid #e2e8f0;
-            font-size: 16px; /* Mencegah auto-zoom pada iOS */
+            font-size: 16px;
         }
 
-        input:focus {
-            outline: none;
-            border-color: var(--primary);
-            ring: 2px var(--primary);
-        }
+        input:focus { outline: none; border-color: var(--primary); }
 
-        /* Barang List Grid */
         .barang-row {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -74,73 +69,64 @@
             position: relative;
         }
 
-        .barang-row input:first-child {
-            grid-column: span 2; /* Nama barang penuh di baris pertama */
-        }
+        .barang-row input:first-child { grid-column: span 2; }
 
         .btn-del {
             position: absolute;
-            top: -10px;
-            right: -10px;
-            width: 28px;
-            height: 28px;
-            min-height: 28px;
+            top: -8px;
+            right: -8px;
+            width: 26px;
+            height: 26px;
+            min-height: 26px;
             background: var(--danger);
             color: white;
             border: none;
             border-radius: 50%;
             padding: 0;
             cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            display: flex; align-items: center; justify-content: center;
             font-size: 12px;
             box-shadow: 0 2px 4px rgba(0,0,0,0.2);
         }
 
-        /* Button Variants */
         .btn-add { background: #f1f5f9; color: var(--text); border: 1px dashed #cbd5e1; font-weight: 600; }
         .btn-primary { background: var(--primary); color: white; border: none; font-weight: 700; margin-top: 16px; }
-        .btn-outline { background: transparent; border: 1px solid var(--primary); color: var(--primary); font-weight: 600; }
+        .btn-outline { background: white; border: 1px solid var(--primary); color: var(--primary); font-weight: 600; }
 
-        .action-group {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 10px;
-        }
+        .action-group { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 
-        /* STRUK PREVIEW */
+        /* STRUK AREA (OPTIMAL 58mm) */
         #struk-container {
-            display: none; /* Sembunyi sampai dihitung */
+            display: none;
             justify-content: center;
-            background: #cbd5e1;
+            background: #e2e8f0;
             padding: 20px 10px;
             border-radius: 12px;
             margin-top: 10px;
-            overflow-x: auto;
         }
 
         .struk {
             background: white;
             font-family: 'Courier New', Courier, monospace;
-            padding: 15px;
+            padding: 12px;
             color: black;
-            box-shadow: 0 0 10px rgba(0,0,0,0.1);
-            font-size: 13px;
-            line-height: 1.4;
+            width: var(--struk-width);
+            font-size: 12px;
+            line-height: 1.3;
         }
 
         .center { text-align: center; }
-        .toko-name { font-weight: bold; font-size: 18px; text-transform: uppercase; }
-        .line { border-top: 1px dashed #000; margin: 8px 0; }
-        .row { display: flex; justify-content: space-between; gap: 10px; }
-        .item-name { word-break: break-all; }
+        .toko-name { font-weight: bold; font-size: 16px; text-transform: uppercase; margin-bottom: 2px; }
+        .line { border-top: 1px dashed #000; margin: 6px 0; }
+        .row { display: flex; justify-content: space-between; gap: 4px; }
+        .item-name { word-break: break-word; }
 
         @media print {
             body { background: white; padding: 0; }
             .container > *:not(#struk-container) { display: none; }
-            #struk-container { display: block; background: white; padding: 0; }
-            .struk { box-shadow: none; width: 100% !important; }
+            #struk-container { display: block; background: white; padding: 0; margin: 0; }
+            .struk { width: 100% !important; padding: 0; box-shadow: none; }
+            @page { margin: 0; }
         }
     </style>
 </head>
@@ -148,36 +134,30 @@
 
 <div class="container">
     <div class="card">
-        <h3>🏠 Informasi Toko</h3>
-        <input id="toko" placeholder="Nama Toko">
-        <input id="alamat" placeholder="Alamat">
-        <input id="hp" type="tel" placeholder="No WhatsApp/HP">
-        
-        <label style="font-size: 12px; color: #64748b; margin-left: 5px;">Ukuran Kertas</label>
-        <select id="kertas">
-            <option value="58">Thermal 58mm (Kecil)</option>
-            <option value="80">Thermal 80mm (Besar)</option>
-        </select>
+        <h3>🏢 Info Toko</h3>
+        <input id="toko" placeholder="Nama Toko (Contoh: Toko Berkah)">
+        <input id="alamat" placeholder="Alamat Singkat">
+        <input id="hp" type="tel" placeholder="Nomor HP">
     </div>
 
     <div class="card">
-        <h3>📦 Daftar Barang</h3>
+        <h3>📦 Belanjaan</h3>
         <div id="barang-list"></div>
-        <button class="btn-add" onclick="tambahBarang()">+ Tambah Item</button>
+        <button class="btn-add" onclick="tambahBarang()">+ Item Baru</button>
 
         <div style="margin-top: 20px; border-top: 1px solid #f1f5f9; padding-top: 10px;">
-            <label style="font-size: 12px; color: #64748b;">Total Bayar (Tunai)</label>
+            <label style="font-size: 12px; color: #64748b; margin-left: 5px;">Uang Tunai Pembeli</label>
             <input id="uang" type="number" placeholder="Rp 0">
-            <button class="btn-primary" onclick="hitung()">🔥 PROSES STRUK</button>
+            <button class="btn-primary" onclick="hitung()">🔥 PROSES STRUK (58mm)</button>
         </div>
     </div>
 
     <div id="struk-container">
         <div id="struk" class="struk">
             <div class="center toko-name" id="sToko"></div>
-            <div class="center" id="sAlamat"></div>
-            <div class="center" id="sHp"></div>
-            <div class="center" id="sWaktu" style="font-size: 11px;"></div>
+            <div class="center" id="sAlamat" style="font-size: 10px;"></div>
+            <div class="center" id="sHp" style="font-size: 10px;"></div>
+            <div class="center" id="sWaktu" style="font-size: 10px;"></div>
 
             <div class="line"></div>
             <div id="sBarang"></div>
@@ -188,8 +168,8 @@
             <div class="row"><span>Kembali</span><span id="sKembali"></span></div>
 
             <div class="line"></div>
-            <div class="center" style="margin-top: 10px;">TERIMA KASIH</div>
-            <div class="center" style="font-size: 10px;">Barang yang sudah dibeli tidak dapat ditukar/dikembalikan</div>
+            <div class="center" style="margin-top: 5px;">TERIMA KASIH</div>
+            <div class="center" style="font-size: 9px;">Barang yang sudah dibeli<br>tidak dapat ditukar.</div>
         </div>
     </div>
 
@@ -207,9 +187,6 @@
     }
 
     function tambahBarang() {
-        const rows = document.querySelectorAll('.barang-row').length;
-        if (rows >= 30) return alert("Maksimal 30 barang");
-
         const d = document.createElement("div");
         d.className = "barang-row";
         d.innerHTML = `
@@ -221,7 +198,7 @@
         list.appendChild(d);
     }
 
-    // Inisialisasi barang pertama
+    // Mulai dengan satu baris kosong
     tambahBarang();
 
     function hitung() {
@@ -250,7 +227,7 @@
         });
 
         if(!valid) {
-            alert("Isi minimal satu nama barang dan harga!");
+            alert("Masukkan minimal satu barang!");
             return;
         }
 
@@ -258,36 +235,30 @@
         const now = new Date();
         const waktu = now.toLocaleDateString("id-ID") + " " + now.toLocaleTimeString("id-ID", {hour: '2-digit', minute:'2-digit'});
 
-        // Update Struk
-        document.getElementById("sToko").textContent = document.getElementById("toko").value || "TOKO KAMI";
+        // Update Data Struk
+        document.getElementById("sToko").textContent = document.getElementById("toko").value || "TOKO SAYA";
         document.getElementById("sAlamat").textContent = document.getElementById("alamat").value;
-        document.getElementById("sHp").textContent = document.getElementById("hp").value ? "WA: " + document.getElementById("hp").value : "";
+        document.getElementById("sHp").textContent = document.getElementById("hp").value ? "Telp: " + document.getElementById("hp").value : "";
         document.getElementById("sWaktu").textContent = waktu;
         document.getElementById("sBarang").innerHTML = html;
         document.getElementById("sTotal").textContent = rupiah(total);
         document.getElementById("sBayar").textContent = rupiah(bayar);
         document.getElementById("sKembali").textContent = rupiah(bayar - total);
-
-        // Atur Lebar Kertas
-        const w = document.getElementById("kertas").value;
-        document.getElementById("struk").style.width = w === "58" ? "250px" : "350px";
         
-        // Tampilkan Preview dan Tombol
+        // Tampilkan Preview
         document.getElementById("struk-container").style.display = "flex";
         document.getElementById("print-actions").style.display = "grid";
-
-        // Scroll ke struk
         document.getElementById("struk-container").scrollIntoView({ behavior: 'smooth' });
     }
 
     function downloadPDF() {
         const element = document.getElementById('struk');
         const opt = {
-            margin: 0.5,
-            filename: 'struk-' + Date.now() + '.pdf',
+            margin: 2,
+            filename: 'struk-58mm.pdf',
             image: { type: 'jpeg', quality: 0.98 },
             html2canvas: { scale: 3 },
-            jsPDF: { unit: 'mm', format: [Number(document.getElementById('kertas').value) + 10, 200], orientation: 'portrait' }
+            jsPDF: { unit: 'mm', format: [58, 150], orientation: 'portrait' }
         };
         html2pdf().set(opt).from(element).save();
     }
