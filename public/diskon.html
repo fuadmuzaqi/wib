@@ -2,56 +2,177 @@
 <html lang="id">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Generator Harga Maksimal Diskon</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0" />
+  <title>Kalkulator Diskon Maksimal</title>
   <style>
-    :root { --bg:#0b1220; --card:#111a2e; --text:#e8eefc; --muted:#a9b6d3; --accent:#4f8cff; --danger:#ff5a7a; }
-    body { margin:0; font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; background: linear-gradient(180deg, var(--bg), #070b14); color: var(--text); }
-    .wrap { max-width: 720px; margin: 0 auto; padding: 18px; }
-    .card { background: rgba(17,26,46,.92); border: 1px solid rgba(255,255,255,.08); border-radius: 14px; padding: 16px; box-shadow: 0 10px 30px rgba(0,0,0,.25); }
-    h1 { font-size: 18px; margin: 0 0 10px; }
-    p { margin: 8px 0; color: var(--muted); line-height: 1.45; font-size: 13px; }
-    label { display:block; margin-top: 12px; font-size: 13px; color: var(--muted); }
-    input { width: 100%; margin-top: 6px; padding: 12px 12px; border-radius: 12px; border: 1px solid rgba(255,255,255,.12); background: rgba(0,0,0,.20); color: var(--text); font-size: 16px; outline: none; }
-    input:focus { border-color: rgba(79,140,255,.7); box-shadow: 0 0 0 4px rgba(79,140,255,.15); }
-    button { width:100%; margin-top: 14px; padding: 12px 14px; border: 0; border-radius: 12px; background: var(--accent); color: #081126; font-weight: 700; font-size: 16px; }
-    .result { margin-top: 14px; padding: 12px; border-radius: 12px; background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.10); }
-    .row { display:flex; gap:10px; flex-wrap: wrap; }
-    .row > div { flex: 1 1 220px; }
-    .bad { color: var(--danger); font-weight: 700; }
-    .big { font-size: 18px; font-weight: 800; margin: 6px 0; }
-    .mono { font-variant-numeric: tabular-nums; }
-    .foot { margin-top: 12px; font-size: 12px; color: rgba(233,240,255,.62); }
+    :root { 
+      --bg: #0b1220; 
+      --card: #111a2e; 
+      --text: #e8eefc; 
+      --muted: #a9b6d3; 
+      --accent: #4f8cff; 
+      --accent-hover: #3d70cc;
+      --danger: #ff5a7a; 
+    }
+
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+    body { 
+      margin: 0; 
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; 
+      background: var(--bg); 
+      color: var(--text); 
+      display: flex;
+      justify-content: center;
+      min-height: 100vh;
+    }
+
+    .wrap { 
+      width: 100%;
+      max-width: 500px; 
+      padding: 20px; 
+    }
+
+    .card { 
+      background: var(--card); 
+      border: 1px solid rgba(255,255,255,.08); 
+      border-radius: 20px; 
+      padding: 24px; 
+      box-shadow: 0 15px 35px rgba(0,0,0,.3); 
+    }
+
+    h1 { 
+      font-size: 20px; 
+      margin: 0 0 8px; 
+      font-weight: 700;
+      letter-spacing: -0.5px;
+    }
+
+    p { 
+      margin: 0 0 24px; 
+      color: var(--muted); 
+      line-height: 1.5; 
+      font-size: 14px; 
+    }
+
+    label { 
+      display: block; 
+      margin-bottom: 8px; 
+      font-size: 13px; 
+      font-weight: 600;
+      color: var(--muted); 
+    }
+
+    input { 
+      width: 100%; 
+      margin-bottom: 16px; 
+      padding: 14px 16px; 
+      border-radius: 12px; 
+      border: 2px solid rgba(255,255,255,.1); 
+      background: rgba(0,0,0,.2); 
+      color: var(--text); 
+      font-size: 16px; /* Mencegah auto-zoom di iOS */
+      outline: none; 
+      transition: border-color 0.2s;
+    }
+
+    input:focus { border-color: var(--accent); }
+
+    button { 
+      width: 100%; 
+      padding: 16px; 
+      border: 0; 
+      border-radius: 14px; 
+      background: var(--accent); 
+      color: #ffffff; 
+      font-weight: 700; 
+      font-size: 16px; 
+      cursor: pointer;
+      transition: transform 0.1s, background 0.2s;
+    }
+
+    button:active { 
+      transform: scale(0.98); 
+      background: var(--accent-hover);
+    }
+
+    .result { 
+      margin-top: 24px; 
+      padding: 20px; 
+      border-radius: 16px; 
+      background: rgba(79, 140, 255, 0.1); 
+      border: 1px solid rgba(79, 140, 255, 0.2); 
+      animation: fadeIn 0.3s ease-out;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .res-item { margin-bottom: 15px; }
+    .res-item:last-child { margin-bottom: 0; }
+
+    .res-label { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; }
+
+    .bad { color: var(--danger); font-weight: 600; text-align: center; }
+    
+    .big { 
+      font-size: 22px; 
+      font-weight: 800; 
+      margin-top: 4px;
+      color: #ffffff;
+    }
+
+    .mono { font-variant-numeric: tabular-nums; font-family: 'Courier New', Courier, monospace; }
+    
+    .foot { 
+      margin-top: 20px; 
+      font-size: 12px; 
+      text-align: center;
+      color: var(--muted);
+      opacity: 0.7;
+    }
+
+    /* Layout untuk Tablet/Desktop kecil */
+    @media (min-width: 400px) {
+      .row { display: flex; gap: 12px; }
+      .row > div { flex: 1; }
+    }
   </style>
 </head>
 <body>
   <div class="wrap">
     <div class="card">
-      <h1>Generator Harga Beli Maksimal (Diskon Maksimal)</h1>
-      <p>Masukkan persen diskon dan target “diskon maksimal (rupiah)”. Submit akan menampilkan harga maksimal sebelum diskon, harga setelah diskon, dan keterangan “cuan”.</p>
+      <h1>💰 Cek Diskon Max</h1>
+      <p>Hitung harga barang maksimal agar kupon diskonmu terpakai optimal.</p>
 
       <form id="f">
         <div class="row">
           <div>
-            <label for="p">Diskon berapa persen (%)</label>
-            <input id="p" inputmode="decimal" placeholder="Contoh: 25" required />
+            <label for="p">Persen Diskon (%)</label>
+            <input id="p" type="text" inputmode="decimal" placeholder="Misal: 25" required />
           </div>
           <div>
-            <label for="d">Diskon maksimal berapa rupiah (Rp)</label>
-            <input id="d" inputmode="numeric" placeholder="Contoh: 50000" required />
+            <label for="d">Limit Diskon (Rp)</label>
+            <input id="d" type="text" inputmode="numeric" placeholder="Misal: 50000" required />
           </div>
         </div>
 
-        <button type="submit">Hitung</button>
+        <button type="submit">Hitung Sekarang</button>
       </form>
 
       <div id="out" class="result" style="display:none;"></div>
-      <div class="foot">Catatan: hasil dibulatkan ke rupiah (tanpa desimal).</div>
     </div>
+    <div class="foot">Hasil pembulatan ke Rupiah terdekat.</div>
   </div>
 
   <script>
-    const rupiah = (n) => new Intl.NumberFormat('id-ID').format(Math.round(n));
+    const rupiah = (n) => new Intl.NumberFormat('id-ID', {
+      style: 'currency',
+      currency: 'IDR',
+      maximumFractionDigits: 0
+    }).format(Math.round(n));
 
     document.getElementById('f').addEventListener('submit', (e) => {
       e.preventDefault();
@@ -61,37 +182,36 @@
 
       const p = Number(pRaw);
       const D = Number(dRaw);
-
       const out = document.getElementById('out');
-      out.style.display = 'block';
 
       if (!Number.isFinite(p) || p <= 0 || p >= 100) {
-        out.innerHTML = '<div class="bad">Persen diskon harus di antara 0 dan 100 (contoh: 25).</div>';
+        out.style.display = 'block';
+        out.innerHTML = '<div class="bad">⚠️ Persen diskon harus 1 - 99</div>';
         return;
       }
       if (!Number.isFinite(D) || D <= 0) {
-        out.innerHTML = '<div class="bad">Diskon maksimal (rupiah) harus lebih dari 0 (contoh: 50000).</div>';
+        out.style.display = 'block';
+        out.innerHTML = '<div class="bad">⚠️ Masukkan nominal diskon yang valid</div>';
         return;
       }
 
-      // Harga maksimal sebelum diskon supaya diskon yang didapat = D
       const hargaMaks = D / (p / 100);
-
-      // Harga setelah diskon
       const hargaSetelah = hargaMaks - D;
 
-      // Sesuai permintaan: "harga maksimal - rupiah diskon maksimal = cuan berapa rupiah"
-      const cuan = hargaMaks - D;
-
+      out.style.display = 'block';
       out.innerHTML = `
-        <div>Harga maksimal (sebelum diskon):</div>
-        <div class="big mono">Rp ${rupiah(hargaMaks)}</div>
+        <div class="res-item">
+          <div class="res-label">Harga Maks. Sebelum Diskon</div>
+          <div class="big mono">${rupiah(hargaMaks)}</div>
+        </div>
 
-        <div style="margin-top:10px;">Harga setelah diskon:</div>
-        <div class="big mono">Rp ${rupiah(hargaSetelah)}</div>
+        <div class="res-item">
+          <div class="res-label">Harga Setelah Diskon</div>
+          <div class="big mono">${rupiah(hargaSetelah)}</div>
+        </div>
 
-        <div style="margin-top:10px; color: rgba(233,240,255,.85);">
-          Keterangan: <span class="mono">Rp ${rupiah(hargaMaks)} - Rp ${rupiah(D)} = Rp ${rupiah(cuan)}</span>
+        <div style="margin-top:15px; padding-top:15px; border-top:1px dashed rgba(255,255,255,0.1); font-size:13px; color: var(--muted);">
+          <b>Analisis:</b> Belanja senilai <span class="mono">${rupiah(hargaMaks)}</span> akan memotong saldo tepat <span class="mono">${rupiah(D)}</span>.
         </div>
       `;
     });
