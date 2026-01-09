@@ -1,0 +1,100 @@
+const html = `<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Generator Harga Maksimal Diskon</title>
+  <style>
+    :root { --bg:#0b1220; --card:#111a2e; --text:#e8eefc; --muted:#a9b6d3; --accent:#4f8cff; --danger:#ff5a7a; }
+    body { margin:0; font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; background: linear-gradient(180deg, var(--bg), #070b14); color: var(--text); }
+    .wrap { max-width: 720px; margin: 0 auto; padding: 18px; }
+    .card { background: rgba(17,26,46,.92); border: 1px solid rgba(255,255,255,.08); border-radius: 14px; padding: 16px; box-shadow: 0 10px 30px rgba(0,0,0,.25); }
+    h1 { font-size: 18px; margin: 0 0 10px; }
+    p { margin: 8px 0; color: var(--muted); line-height: 1.45; font-size: 13px; }
+    label { display:block; margin-top: 12px; font-size: 13px; color: var(--muted); }
+    input { width: 100%; margin-top: 6px; padding: 12px 12px; border-radius: 12px; border: 1px solid rgba(255,255,255,.12); background: rgba(0,0,0,.20); color: var(--text); font-size: 16px; outline: none; }
+    input:focus { border-color: rgba(79,140,255,.7); box-shadow: 0 0 0 4px rgba(79,140,255,.15); }
+    button { width:100%; margin-top: 14px; padding: 12px 14px; border: 0; border-radius: 12px; background: var(--accent); color: #081126; font-weight: 700; font-size: 16px; }
+    .result { margin-top: 14px; padding: 12px; border-radius: 12px; background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.10); }
+    .row { display:flex; gap:10px; flex-wrap: wrap; }
+    .row > div { flex: 1 1 220px; }
+    .bad { color: var(--danger); font-weight: 700; }
+    .big { font-size: 18px; font-weight: 800; margin: 6px 0; }
+    .mono { font-variant-numeric: tabular-nums; }
+    .foot { margin-top: 12px; font-size: 12px; color: rgba(233,240,255,.62); }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="card">
+      <h1>Generator Harga Beli Maksimal (Diskon Maksimal)</h1>
+      <p>Isi persen diskon dan target “diskon maksimal (rupiah)”. Setelah submit, akan muncul harga maksimal sebelum diskon, harga setelah diskon, dan keterangan “cuan”.</p>
+
+      <form id="f">
+        <div class="row">
+          <div>
+            <label for="p">Diskon berapa persen (%)</label>
+            <input id="p" inputmode="decimal" placeholder="Contoh: 25" required />
+          </div>
+          <div>
+            <label for="d">Diskon maksimal berapa rupiah (Rp)</label>
+            <input id="d" inputmode="numeric" placeholder="Contoh: 50000" required />
+          </div>
+        </div>
+
+        <button type="submit">Hitung</button>
+      </form>
+
+      <div id="out" class="result" style="display:none;"></div>
+      <div class="foot">Catatan: hasil dibulatkan ke rupiah (tanpa desimal).</div>
+    </div>
+  </div>
+
+  <script>
+    const rupiah = (n) => new Intl.NumberFormat('id-ID').format(Math.round(n));
+
+    document.getElementById('f').addEventListener('submit', (e) => {
+      e.preventDefault();
+      const pRaw = document.getElementById('p').value.trim().replace(',', '.');
+      const dRaw = document.getElementById('d').value.trim().replace(/[^0-9]/g, '');
+
+      const p = Number(pRaw);
+      const D = Number(dRaw);
+
+      const out = document.getElementById('out');
+      out.style.display = 'block';
+
+      if (!Number.isFinite(p) || p <= 0 || p >= 100) {
+        out.innerHTML = '<div class="bad">Persen diskon harus di antara 0 dan 100 (contoh: 25).</div>';
+        return;
+      }
+      if (!Number.isFinite(D) || D <= 0) {
+        out.innerHTML = '<div class="bad">Diskon maksimal (rupiah) harus lebih dari 0 (contoh: 50000).</div>';
+        return;
+      }
+
+      const hargaMaks = D / (p / 100);              // harga sebelum diskon agar diskon = D
+      const hargaSetelah = hargaMaks - D;           // harga setelah diskon
+      const cuan = hargaMaks - D;                   // sesuai permintaan: harga maksimal - diskon maksimal
+
+      out.innerHTML = \`
+        <div>Harga maksimal (sebelum diskon):</div>
+        <div class="big mono">Rp \${rupiah(hargaMaks)}</div>
+
+        <div style="margin-top:10px;">Harga setelah diskon:</div>
+        <div class="big mono">Rp \${rupiah(hargaSetelah)}</div>
+
+        <div style="margin-top:10px; color: rgba(233,240,255,.85);">
+          Keterangan: <span class="mono">Rp \${rupiah(hargaMaks)} - Rp \${rupiah(D)} = Rp \${rupiah(cuan)}</span>
+        </div>
+      \`;
+    });
+  </script>
+</body>
+</html>`;
+
+Deno.serve((_req) => {
+  return new Response(html, {
+    headers: { "content-type": "text/html; charset=utf-8" },
+  });
+});
