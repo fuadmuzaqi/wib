@@ -1,4 +1,4 @@
-const html = `<!doctype html>
+<!doctype html>
 <html lang="id">
 <head>
   <meta charset="utf-8" />
@@ -28,7 +28,7 @@ const html = `<!doctype html>
   <div class="wrap">
     <div class="card">
       <h1>Generator Harga Beli Maksimal (Diskon Maksimal)</h1>
-      <p>Isi persen diskon dan target “diskon maksimal (rupiah)”. Setelah submit, akan muncul harga maksimal sebelum diskon, harga setelah diskon, dan keterangan “cuan”.</p>
+      <p>Masukkan persen diskon dan target “diskon maksimal (rupiah)”. Submit akan menampilkan harga maksimal sebelum diskon, harga setelah diskon, dan keterangan “cuan”.</p>
 
       <form id="f">
         <div class="row">
@@ -55,6 +55,7 @@ const html = `<!doctype html>
 
     document.getElementById('f').addEventListener('submit', (e) => {
       e.preventDefault();
+
       const pRaw = document.getElementById('p').value.trim().replace(',', '.');
       const dRaw = document.getElementById('d').value.trim().replace(/[^0-9]/g, '');
 
@@ -73,28 +74,27 @@ const html = `<!doctype html>
         return;
       }
 
-      const hargaMaks = D / (p / 100);              // harga sebelum diskon agar diskon = D
-      const hargaSetelah = hargaMaks - D;           // harga setelah diskon
-      const cuan = hargaMaks - D;                   // sesuai permintaan: harga maksimal - diskon maksimal
+      // Harga maksimal sebelum diskon supaya diskon yang didapat = D
+      const hargaMaks = D / (p / 100);
 
-      out.innerHTML = \`
+      // Harga setelah diskon
+      const hargaSetelah = hargaMaks - D;
+
+      // Sesuai permintaan: "harga maksimal - rupiah diskon maksimal = cuan berapa rupiah"
+      const cuan = hargaMaks - D;
+
+      out.innerHTML = `
         <div>Harga maksimal (sebelum diskon):</div>
-        <div class="big mono">Rp \${rupiah(hargaMaks)}</div>
+        <div class="big mono">Rp ${rupiah(hargaMaks)}</div>
 
         <div style="margin-top:10px;">Harga setelah diskon:</div>
-        <div class="big mono">Rp \${rupiah(hargaSetelah)}</div>
+        <div class="big mono">Rp ${rupiah(hargaSetelah)}</div>
 
         <div style="margin-top:10px; color: rgba(233,240,255,.85);">
-          Keterangan: <span class="mono">Rp \${rupiah(hargaMaks)} - Rp \${rupiah(D)} = Rp \${rupiah(cuan)}</span>
+          Keterangan: <span class="mono">Rp ${rupiah(hargaMaks)} - Rp ${rupiah(D)} = Rp ${rupiah(cuan)}</span>
         </div>
-      \`;
+      `;
     });
   </script>
 </body>
-</html>`;
-
-Deno.serve((_req) => {
-  return new Response(html, {
-    headers: { "content-type": "text/html; charset=utf-8" },
-  });
-});
+</html>
