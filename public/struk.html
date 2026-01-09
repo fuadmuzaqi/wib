@@ -3,19 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Kasir 58mm - Edisi Simpel</title>
-
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <title>Kasir 58mm - Fix Cetak</title>
 
     <style>
         :root {
             --primary: #2563eb;
-            --success: #16a34a;
             --danger: #dc2626;
             --bg: #f8fafc;
             --card: #ffffff;
             --text: #1e293b;
-            /* Lebar standar thermal 58mm di browser adalah sekitar 220px-240px */
             --struk-width: 230px; 
         }
 
@@ -44,7 +40,7 @@
             margin-bottom: 20px;
         }
 
-        h3 { margin-top: 0; font-size: 1.1rem; color: var(--primary); display: flex; align-items: center; gap: 8px; }
+        h3 { margin-top: 0; font-size: 1.1rem; color: var(--primary); }
 
         input, button {
             width: 100%;
@@ -83,23 +79,28 @@
             border: none;
             border-radius: 50%;
             padding: 0;
-            cursor: pointer;
             display: flex; align-items: center; justify-content: center;
             font-size: 12px;
             box-shadow: 0 2px 4px rgba(0,0,0,0.2);
         }
 
         .btn-add { background: #f1f5f9; color: var(--text); border: 1px dashed #cbd5e1; font-weight: 600; }
-        .btn-primary { background: var(--primary); color: white; border: none; font-weight: 700; margin-top: 16px; }
-        .btn-outline { background: white; border: 1px solid var(--primary); color: var(--primary); font-weight: 600; }
+        .btn-primary { background: var(--primary); color: white; border: none; font-weight: 700; margin-top: 16px; cursor: pointer; }
+        
+        /* TOMBOL CETAK */
+        .btn-print { 
+            background: #1e293b; 
+            color: white; 
+            border: none; 
+            font-weight: 700; 
+            display: none; /* Sembunyi sampai dihitung */
+        }
 
-        .action-group { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-
-        /* STRUK AREA (OPTIMAL 58mm) */
+        /* STRUK PREVIEW */
         #struk-container {
             display: none;
             justify-content: center;
-            background: #e2e8f0;
+            background: #cbd5e1;
             padding: 20px 10px;
             border-radius: 12px;
             margin-top: 10px;
@@ -116,17 +117,45 @@
         }
 
         .center { text-align: center; }
-        .toko-name { font-weight: bold; font-size: 16px; text-transform: uppercase; margin-bottom: 2px; }
+        .toko-name { font-weight: bold; font-size: 16px; text-transform: uppercase; }
         .line { border-top: 1px dashed #000; margin: 6px 0; }
         .row { display: flex; justify-content: space-between; gap: 4px; }
-        .item-name { word-break: break-word; }
 
+        /* ==========================================
+           PERBAIKAN FITUR CETAK (HANYA STRUK)
+           ========================================== */
         @media print {
-            body { background: white; padding: 0; }
-            .container > *:not(#struk-container) { display: none; }
-            #struk-container { display: block; background: white; padding: 0; margin: 0; }
-            .struk { width: 100% !important; padding: 0; box-shadow: none; }
-            @page { margin: 0; }
+            /* Sembunyikan SEMUA elemen di halaman */
+            body * {
+                visibility: hidden;
+                background: none !important;
+            }
+            
+            /* Tampilkan HANYA area struk dan isinya */
+            #struk, #struk * {
+                visibility: visible;
+            }
+
+            /* Posisi struk di pojok kiri atas kertas */
+            #struk {
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100% !important;
+                padding: 0;
+                margin: 0;
+            }
+
+            #struk-container {
+                background: none !important;
+                padding: 0 !important;
+                display: block !important;
+            }
+
+            /* Hilangkan margin kertas bawaan browser */
+            @page {
+                margin: 0;
+            }
         }
     </style>
 </head>
@@ -135,20 +164,19 @@
 <div class="container">
     <div class="card">
         <h3>🏢 Info Toko</h3>
-        <input id="toko" placeholder="Nama Toko (Contoh: Toko Berkah)">
+        <input id="toko" placeholder="Nama Toko">
         <input id="alamat" placeholder="Alamat Singkat">
         <input id="hp" type="tel" placeholder="Nomor HP">
     </div>
 
     <div class="card">
-        <h3>📦 Belanjaan</h3>
+        <h3>📦 Input Barang</h3>
         <div id="barang-list"></div>
-        <button class="btn-add" onclick="tambahBarang()">+ Item Baru</button>
+        <button class="btn-add" onclick="tambahBarang()">+ Tambah Item</button>
 
         <div style="margin-top: 20px; border-top: 1px solid #f1f5f9; padding-top: 10px;">
-            <label style="font-size: 12px; color: #64748b; margin-left: 5px;">Uang Tunai Pembeli</label>
-            <input id="uang" type="number" placeholder="Rp 0">
-            <button class="btn-primary" onclick="hitung()">🔥 PROSES STRUK (58mm)</button>
+            <input id="uang" type="number" placeholder="Uang Tunai (Rp)">
+            <button class="btn-primary" onclick="hitung()">HITUNG TOTAL</button>
         </div>
     </div>
 
@@ -163,9 +191,9 @@
             <div id="sBarang"></div>
             <div class="line"></div>
 
-            <div class="row"><strong>Total</strong><strong id="sTotal"></strong></div>
-            <div class="row"><span>Bayar</span><span id="sBayar"></span></div>
-            <div class="row"><span>Kembali</span><span id="sKembali"></span></div>
+            <div class="row"><strong>TOTAL</strong><strong id="sTotal"></strong></div>
+            <div class="row"><span>BAYAR</span><span id="sBayar"></span></div>
+            <div class="row"><span>KEMBALI</span><span id="sKembali"></span></div>
 
             <div class="line"></div>
             <div class="center" style="margin-top: 5px;">TERIMA KASIH</div>
@@ -173,10 +201,7 @@
         </div>
     </div>
 
-    <div class="action-group" id="print-actions" style="display: none; margin-top: 20px;">
-        <button class="btn-outline" onclick="window.print()">🖨️ Cetak</button>
-        <button class="btn-outline" onclick="downloadPDF()">📄 Simpan PDF</button>
-    </div>
+    <button id="btn-print-main" class="btn-print" onclick="window.print()">🖨️ CETAK STRUK SEKARANG</button>
 </div>
 
 <script>
@@ -198,7 +223,6 @@
         list.appendChild(d);
     }
 
-    // Mulai dengan satu baris kosong
     tambahBarang();
 
     function hitung() {
@@ -227,7 +251,7 @@
         });
 
         if(!valid) {
-            alert("Masukkan minimal satu barang!");
+            alert("Isi minimal satu barang!");
             return;
         }
 
@@ -235,34 +259,21 @@
         const now = new Date();
         const waktu = now.toLocaleDateString("id-ID") + " " + now.toLocaleTimeString("id-ID", {hour: '2-digit', minute:'2-digit'});
 
-        // Update Data Struk
         document.getElementById("sToko").textContent = document.getElementById("toko").value || "TOKO SAYA";
         document.getElementById("sAlamat").textContent = document.getElementById("alamat").value;
-        document.getElementById("sHp").textContent = document.getElementById("hp").value ? "Telp: " + document.getElementById("hp").value : "";
+        document.getElementById("sHp").textContent = document.getElementById("hp").value ? "HP: " + document.getElementById("hp").value : "";
         document.getElementById("sWaktu").textContent = waktu;
         document.getElementById("sBarang").innerHTML = html;
         document.getElementById("sTotal").textContent = rupiah(total);
         document.getElementById("sBayar").textContent = rupiah(bayar);
         document.getElementById("sKembali").textContent = rupiah(bayar - total);
         
-        // Tampilkan Preview
+        // Tampilkan Struk dan Tombol Cetak
         document.getElementById("struk-container").style.display = "flex";
-        document.getElementById("print-actions").style.display = "grid";
-        document.getElementById("struk-container").scrollIntoView({ behavior: 'smooth' });
-    }
-
-    function downloadPDF() {
-        const element = document.getElementById('struk');
-        const opt = {
-            margin: 2,
-            filename: 'struk-58mm.pdf',
-            image: { type: 'jpeg', quality: 0.98 },
-            html2canvas: { scale: 3 },
-            jsPDF: { unit: 'mm', format: [58, 150], orientation: 'portrait' }
-        };
-        html2pdf().set(opt).from(element).save();
+        document.getElementById("btn-print-main").style.display = "block";
+        document.getElementById("btn-print-main").scrollIntoView({ behavior: 'smooth' });
     }
 </script>
 
 </body>
-</html>
+                </html>
