@@ -5,8 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Kasir Ringan - Struk Toko</title>
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
-
     <style>
         :root {
             --primary: #2563eb;
@@ -48,12 +46,12 @@
         /* Form Styling */
         input, select, button {
             width: 100%;
-            min-height: 48px; /* Standard mobile touch size */
+            min-height: 48px; 
             padding: 12px;
             margin: 8px 0;
             border-radius: 10px;
             border: 1px solid #e2e8f0;
-            font-size: 16px; /* Mencegah auto-zoom pada iOS */
+            font-size: 16px; 
         }
 
         input:focus {
@@ -75,7 +73,7 @@
         }
 
         .barang-row input:first-child {
-            grid-column: span 2; /* Nama barang penuh di baris pertama */
+            grid-column: span 2;
         }
 
         .btn-del {
@@ -105,13 +103,13 @@
 
         .action-group {
             display: grid;
-            grid-template-columns: 1fr 1fr;
+            grid-template-columns: 1fr; /* Diubah menjadi satu kolom karena PDF dihapus */
             gap: 10px;
         }
 
         /* STRUK PREVIEW */
         #struk-container {
-            display: none; /* Sembunyi sampai dihitung */
+            display: none;
             justify-content: center;
             background: #cbd5e1;
             padding: 20px 10px;
@@ -128,6 +126,7 @@
             box-shadow: 0 0 10px rgba(0,0,0,0.1);
             font-size: 13px;
             line-height: 1.4;
+            width: 250px; /* Otomatis setting 58mm */
         }
 
         .center { text-align: center; }
@@ -138,9 +137,12 @@
 
         @media print {
             body { background: white; padding: 0; }
-            .container > *:not(#struk-container) { display: none; }
+            /* Memastikan semua elemen kecuali struk-container benar-benar hilang saat cetak */
+            .container > *:not(#struk-container), #print-actions { 
+                display: none !important; 
+            }
             #struk-container { display: block; background: white; padding: 0; }
-            .struk { box-shadow: none; width: 100% !important; }
+            .struk { box-shadow: none; width: 100% !important; margin: 0; }
         }
     </style>
 </head>
@@ -152,12 +154,6 @@
         <input id="toko" placeholder="Nama Toko">
         <input id="alamat" placeholder="Alamat">
         <input id="hp" type="tel" placeholder="No WhatsApp/HP">
-        
-        <label style="font-size: 12px; color: #64748b; margin-left: 5px;">Ukuran Kertas</label>
-        <select id="kertas">
-            <option value="58">Thermal 58mm (Kecil)</option>
-            <option value="80">Thermal 80mm (Besar)</option>
-        </select>
     </div>
 
     <div class="card">
@@ -195,7 +191,6 @@
 
     <div class="action-group" id="print-actions" style="display: none; margin-top: 20px;">
         <button class="btn-outline" onclick="window.print()">🖨️ Cetak</button>
-        <button class="btn-outline" onclick="downloadPDF()">📄 Simpan PDF</button>
     </div>
 </div>
 
@@ -267,29 +262,13 @@
         document.getElementById("sTotal").textContent = rupiah(total);
         document.getElementById("sBayar").textContent = rupiah(bayar);
         document.getElementById("sKembali").textContent = rupiah(bayar - total);
-
-        // Atur Lebar Kertas
-        const w = document.getElementById("kertas").value;
-        document.getElementById("struk").style.width = w === "58" ? "250px" : "350px";
         
-        // Tampilkan Preview dan Tombol
+        // Tampilkan Preview dan Tombol Cetak
         document.getElementById("struk-container").style.display = "flex";
         document.getElementById("print-actions").style.display = "grid";
 
         // Scroll ke struk
         document.getElementById("struk-container").scrollIntoView({ behavior: 'smooth' });
-    }
-
-    function downloadPDF() {
-        const element = document.getElementById('struk');
-        const opt = {
-            margin: 0.5,
-            filename: 'struk-' + Date.now() + '.pdf',
-            image: { type: 'jpeg', quality: 0.98 },
-            html2canvas: { scale: 3 },
-            jsPDF: { unit: 'mm', format: [Number(document.getElementById('kertas').value) + 10, 200], orientation: 'portrait' }
-        };
-        html2pdf().set(opt).from(element).save();
     }
 </script>
 
